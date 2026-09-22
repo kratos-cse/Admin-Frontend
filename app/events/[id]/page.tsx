@@ -5,40 +5,43 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
-import { closeEvent, getEvent, openEvent, updateEvent, updateEventRules } from "@/lib/api/events";
+import PageHeader from "@/components/ui/PageHeader";
+import StatusBadge from "@/components/ui/StatusBadge";
+import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
+import EventFormFields from "@/components/events/EventFormFields";
+import { closeEvent, getAdminEvent, openEvent, updateEvent, updateEventRules } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
+import {
+  emptyEventForm,
+  formFromAdminEvent,
+  rosterPreview,
+  toDetailsPatch,
+  toRulesPatch,
+  type EventFormState,
+} from "@/lib/events/formState";
+import type { AdminEvent } from "@/types/events";
 
 export default function EventDetailPage() {
   const params = useParams();
   const id = String(params?.id || "");
   const { hasPermission } = useAuth();
   const canManage = hasPermission("event-management");
-  const [event, setEvent] = useState<Record<string, unknown> | null>(null);
-  const [form, setForm] = useState({ name: "", short_desc: "", category: "", venue: "", fee: "" });
-  const [rules, setRules] = useState({ team_min_size: "1", team_max_size: "1" });
+  const [event, setEvent] = useState<AdminEvent | null>(null);
+  const [form, setForm] = useState<EventFormState>(emptyEventForm);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState<"open" | "close" | null>(null);
 
   async function load() {
     setLoading(true);
     setError(null);
     try {
-      const data = (await getEvent(id)) as Record<string, unknown>;
+      const data = await getAdminEvent(id);
       setEvent(data);
-      setForm({
-        name: String(data.name || ""),
-        short_desc: String(data.short_desc || ""),
-        category: String(data.category || ""),
-        venue: String(data.venue || ""),
-        fee: data.fee != null ? String(data.fee) : "",
-      });
-      setRules({
-        team_min_size: String(data.team_min_size ?? 1),
-        team_max_size: String(data.team_max_size ?? 1),
-      });
+      setForm(formFromAdminEvent(data));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load");
     } finally {
@@ -51,120 +54,102 @@ export default function EventDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  async function saveAll(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canManage) return;
+    setBusy(true);
+    setMsg(null);
+    setError(null);
+    try {
+      await updateEvent(id, toDetailsPatch(form));
+      const updated = await updateEventRules(id, toRulesPatch(form));
+      setEvent(updated);
+      setForm(formFromAdminEvent(updated));
+      setMsg("Event saved.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runConfirm() {
+    if (!confirm) return;
+    setBusy(true);
+    try {
+      if (confirm === "open") await openEvent(id);
+      else await closeEvent(id);
+      setConfirm(null);
+      await load();
+      setMsg(confirm === "open" ? "Registration opened." : "Registration closed.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Action failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <RequireAdmin>
       <AdminShell>
-        <div className="page-title">
-          <h1>{form.name || "Event"}</h1>
-          <p className="muted">
-            <Link href="/events">← Events</Link> · status {String(event?.status ?? "—")}
-          </p>
-        </div>
+        <PageHeader
+          eyebrow="Event editor"
+          title={form.name || "Event"}
+          description={rosterPreview(form)}
+          actions={
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <StatusBadge status={event?.status} />
+              <Link href="/events" className="btn btn-ghost">
+                ← Events
+              </Link>
+              <Link href={`/events/${id}/preview`} className="btn btn-ghost">
+                Preview
+              </Link>
+            </div>
+          }
+        />
         {loading && <p className="muted">Loading…</p>}
-        {error && <p className="state-error">{error}</p>}
+        {error && (
+          <p className="state-error" role="alert">
+            {error}
+          </p>
+        )}
         {msg && <p className="muted">{msg}</p>}
         {event && (
-          <>
-            <form
-              className="card"
-              style={{ maxWidth: 560, marginBottom: 16 }}
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!canManage) return;
-                setBusy(true);
-                setMsg(null);
-                try {
-                  await updateEvent(id, {
-                    name: form.name,
-                    short_desc: form.short_desc || null,
-                    category: form.category || null,
-                    venue: form.venue || null,
-                    fee: form.fee === "" ? null : Number(form.fee),
-                  });
-                  setMsg("Event updated.");
-                  await load();
-                } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Update failed");
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              <h3 style={{ marginBottom: 12 }}>Details</h3>
-              {(Object.keys(form) as (keyof typeof form)[]).map((key) => (
-                <div className="field" key={key}>
-                  <label htmlFor={key}>{key}</label>
-                  <input
-                    id={key}
-                    value={form[key]}
-                    disabled={!canManage}
-                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  />
-                </div>
-              ))}
-              {canManage && (
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button type="submit" className="btn btn-primary" disabled={busy}>
-                    Save
-                  </button>
-                  <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => void openEvent(id).then(load)}>
-                    Open
-                  </button>
-                  <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => void closeEvent(id).then(load)}>
-                    Close
-                  </button>
-                </div>
-              )}
-            </form>
-
-            <form
-              className="card"
-              style={{ maxWidth: 560 }}
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!canManage) return;
-                setBusy(true);
-                try {
-                  await updateEventRules(id, {
-                    team_min_size: Number(rules.team_min_size) || 1,
-                    team_max_size: Number(rules.team_max_size) || 1,
-                  });
-                  setMsg("Rules updated.");
-                  await load();
-                } catch (err) {
-                  setError(err instanceof ApiError ? err.message : "Rules update failed");
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              <h3 style={{ marginBottom: 12 }}>Registration rules</h3>
-              <div className="field">
-                <label htmlFor="team_min_size">team_min_size</label>
-                <input
-                  id="team_min_size"
-                  value={rules.team_min_size}
-                  disabled={!canManage}
-                  onChange={(e) => setRules((r) => ({ ...r, team_min_size: e.target.value }))}
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="team_max_size">team_max_size</label>
-                <input
-                  id="team_max_size"
-                  value={rules.team_max_size}
-                  disabled={!canManage}
-                  onChange={(e) => setRules((r) => ({ ...r, team_max_size: e.target.value }))}
-                />
-              </div>
-              {canManage && (
+          <form onSubmit={saveAll} style={{ maxWidth: 720 }}>
+            <EventFormFields form={form} onChange={setForm} disabled={!canManage || busy} />
+            {canManage && (
+              <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
                 <button type="submit" className="btn btn-primary" disabled={busy}>
-                  Save rules
+                  {busy ? "Saving…" : "Save changes"}
                 </button>
-              )}
-            </form>
-          </>
+                {event.status !== "OPEN" ? (
+                  <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => setConfirm("open")}>
+                    Open registration
+                  </button>
+                ) : (
+                  <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => setConfirm("close")}>
+                    Close registration
+                  </button>
+                )}
+              </div>
+            )}
+          </form>
         )}
+        <ConfirmDialog
+          open={Boolean(confirm)}
+          title={confirm === "open" ? "Open registration?" : "Close registration?"}
+          message={
+            confirm === "open"
+              ? "Participants will see this event as open for registration."
+              : "New registrations will stop. Existing teams are unchanged."
+          }
+          confirmLabel={confirm === "open" ? "Open" : "Close"}
+          danger={confirm === "close"}
+          busy={busy}
+          onConfirm={() => void runConfirm()}
+          onCancel={() => setConfirm(null)}
+        />
       </AdminShell>
     </RequireAdmin>
   );

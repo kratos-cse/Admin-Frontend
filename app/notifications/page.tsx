@@ -18,7 +18,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     void listEvents()
-      .then((data) => setEvents((Array.isArray(data) ? data : []) as Record<string, unknown>[]))
+      .then((data) => setEvents((Array.isArray(data) ? data : []) as unknown as Record<string, unknown>[]))
       .catch(() => undefined);
   }, []);
 
