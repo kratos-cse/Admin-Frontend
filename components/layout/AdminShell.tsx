@@ -24,7 +24,7 @@ const NAV: NavItem[] = [
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { admin, hasPermission, isSuperAdmin, signOut } = useAuth();
+  const { admin, hasPermission, isSuperAdmin, signOut, userEmail } = useAuth();
   const [open, setOpen] = useState(false);
 
   const items = useMemo(
@@ -49,9 +49,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <aside className={`${styles.sidebar} ${open ? styles.open : ""}`}>
         <div className={styles.brand}>
           <span>KRATOS</span>
-          <small>Admin</small>
+          <small>Admin · ’26</small>
         </div>
-        <nav>
+        <nav aria-label="Admin">
           {items.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return (
@@ -73,7 +73,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             ☰
           </button>
           <div className={styles.headerMeta}>
-            <span className="muted">{admin?.role?.name || "Admin"}</span>
+            <span className="muted">
+              {admin?.role?.name || "Admin"}
+              {userEmail ? ` · ${userEmail}` : ""}
+            </span>
             <button
               type="button"
               className="btn btn-ghost"

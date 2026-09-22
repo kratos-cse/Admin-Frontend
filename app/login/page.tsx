@@ -36,20 +36,19 @@ function LoginInner() {
   return (
     <div className="login-page">
       <div className="card login-card">
-        <p className="muted" style={{ letterSpacing: "0.16em", textTransform: "uppercase", fontSize: "0.72rem" }}>
+        <p className="muted" style={{ letterSpacing: "0.18em", textTransform: "uppercase", fontSize: "0.68rem", color: "var(--gold)" }}>
           KRATOS&apos;26
         </p>
-        <h1 style={{ margin: "8px 0 10px" }}>Admin Sign in</h1>
-        <p className="muted" style={{ marginBottom: 20 }}>
-          Google Sign-In issues a JWT. Access requires an active admin row via{" "}
-          <code>GET /admin/me</code>.
+        <h1 style={{ margin: "8px 0 10px", fontSize: "1.75rem" }}>Admin</h1>
+        <p className="muted" style={{ marginBottom: 22, lineHeight: 1.45 }}>
+          Sign in with Google. Access requires an active row in <code>admin_users</code>.
         </p>
         {loading ? (
           <p className="muted">Checking session…</p>
         ) : (
           <>
             <GoogleSignInButton onCredential={onCredential} disabled={busy} />
-            {busy && <p className="muted">Verifying admin access…</p>}
+            {busy && <p className="muted" style={{ marginTop: 12 }}>Verifying admin access…</p>}
             {error && (
               <p className="state-error" role="alert" style={{ marginTop: 14 }}>
                 {error}

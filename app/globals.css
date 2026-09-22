@@ -12,8 +12,10 @@
   --danger: #ff6b5a;
   --ok: #5ad390;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --duration-press: 140ms;
-  --sidebar-w: 240px;
+  --duration-ui: 180ms;
+  --sidebar-w: 248px;
 }
 
 * {
@@ -75,8 +77,12 @@ textarea {
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition: transform var(--duration-press) var(--ease-out), border-color 0.2s ease,
-    background 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform var(--duration-press) var(--ease-out),
+    border-color var(--duration-ui) ease,
+    background var(--duration-ui) ease,
+    opacity var(--duration-ui) ease,
+    box-shadow var(--duration-ui) ease;
 }
 
 .btn:active {
@@ -117,10 +123,12 @@ textarea {
 }
 
 .card {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 18px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
 .kpi-grid {
@@ -235,6 +243,7 @@ table.data tr:hover td {
   place-items: center;
   z-index: 80;
   padding: 20px;
+  animation: fadeIn 160ms ease;
 }
 
 .dialog {
@@ -243,6 +252,16 @@ table.data tr:hover td {
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 22px;
+  transform: scale(1);
+  opacity: 1;
+  transition: transform 180ms var(--ease-out), opacity 180ms var(--ease-out);
+}
+
+@starting-style {
+  .dialog {
+    transform: scale(0.96);
+    opacity: 0;
+  }
 }
 
 .dialog h3 {
@@ -281,6 +300,10 @@ table.data tr:hover td {
   display: grid;
   place-items: center;
   padding: 24px;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(255, 90, 31, 0.18), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(232, 178, 60, 0.08), transparent 55%),
+    var(--ink);
 }
 .login-card {
   width: min(420px, 100%);
@@ -289,6 +312,15 @@ table.data tr:hover td {
 @keyframes shimmer {
   to {
     background-position: -200% 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -301,5 +333,10 @@ table.data tr:hover td {
   }
   .skeleton {
     animation: none;
+  }
+  .dialog-backdrop,
+  .dialog {
+    animation: none;
+    transition: none;
   }
 }
