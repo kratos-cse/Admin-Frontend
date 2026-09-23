@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
+import DeleteRecordButton from "@/components/records/DeleteRecordButton";
 import { listPayments, refundPayment } from "@/lib/api/payments";
+import { deletePayment } from "@/lib/api/records";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
 
@@ -87,11 +89,24 @@ export default function PaymentsPage() {
                     </td>
                     <td>{String(p.payment_type ?? "—")}</td>
                     <td>{p.created_at ? new Date(String(p.created_at)).toLocaleString() : "—"}</td>
-                    <td>
+                    <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {isSuperAdmin && String(p.status) === "PAID" && (
                         <button type="button" className="btn btn-danger" onClick={() => setRefundId(String(p.id))}>
                           Refund
                         </button>
+                      )}
+                      {String(p.status) !== "PAID" && String(p.status) !== "REFUNDED" && (
+                        <DeleteRecordButton
+                          title="Delete payment record?"
+                          message={`Permanently remove payment ${String(p.id).slice(0, 8)}… (${String(p.status)}). Paid and refunded records cannot be deleted.`}
+                          confirmLabel="Delete payment"
+                          label="Delete"
+                          className="btn btn-danger"
+                          style={{ padding: "6px 10px" }}
+                          onDelete={() => deletePayment(String(p.id))}
+                          onDeleted={() => void load()}
+                          onError={(m) => setError(m)}
+                        />
                       )}
                     </td>
                   </tr>

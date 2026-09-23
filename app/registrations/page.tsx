@@ -5,7 +5,9 @@ import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
+import DeleteRecordButton from "@/components/records/DeleteRecordButton";
 import { cancelRegistration, listRegistrations, updateRegistration } from "@/lib/api/registrations";
+import { deleteRegistration } from "@/lib/api/records";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
 
@@ -102,10 +104,21 @@ export default function RegistrationsPage() {
                           </button>
                         )}
                         {isSuperAdmin && (
-                          <button type="button" className="btn btn-danger" onClick={() => setCancelId(String(r.id))}>
+                          <button type="button" className="btn btn-ghost" onClick={() => setCancelId(String(r.id))}>
                             Cancel
                           </button>
                         )}
+                        <DeleteRecordButton
+                          title="Delete registration permanently?"
+                          message={`Hard-delete registration ${String(r.id).slice(0, 8)}… and related team data. Paid payments block deletion. Cancel is the normal lifecycle action.`}
+                          confirmLabel="Delete registration"
+                          label="Delete"
+                          className="btn btn-danger"
+                          style={{ padding: "6px 10px" }}
+                          onDelete={() => deleteRegistration(String(r.id))}
+                          onDeleted={() => void load()}
+                          onError={(m) => setError(m)}
+                        />
                       </td>
                     </tr>
                   );

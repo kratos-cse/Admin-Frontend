@@ -22,6 +22,11 @@ export const PERMISSION_CATALOG: { key: string; label: string; group: string }[]
   { key: "export", label: "Exports", group: "Exports" },
 ];
 
+/** Super Admin only — not assignable via role UI; shown on profile for transparency. */
+export const SUPER_ADMIN_ONLY_PERMISSIONS: { key: string; label: string }[] = [
+  { key: "delete-records", label: "Destructive record deletion" },
+];
+
 export function shortId(id: unknown, n = 8): string {
   const s = String(id ?? "");
   if (!s || s === "undefined") return "—";

@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import PageHeader from "@/components/ui/PageHeader";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
+import DeleteRecordButton from "@/components/records/DeleteRecordButton";
 import EventFormFields from "@/components/events/EventFormFields";
+import { deleteEvent } from "@/lib/api/records";
 import { closeEvent, getAdminEvent, openEvent, updateEvent, updateEventRules } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
@@ -24,6 +26,7 @@ import type { AdminEvent } from "@/types/events";
 
 export default function EventDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = String(params?.id || "");
   const { hasPermission } = useAuth();
   const canManage = hasPermission("event-management");
@@ -132,6 +135,16 @@ export default function EventDetailPage() {
                     Close registration
                   </button>
                 )}
+                <DeleteRecordButton
+                  title="Delete event permanently?"
+                  message="This hard-deletes the event and related teams, registrations, and checkpoints. Paid registrations block deletion. Use close/cancel flows for normal lifecycle changes."
+                  confirmLabel="Delete event"
+                  label="Delete event"
+                  className="btn btn-danger"
+                  onDelete={() => deleteEvent(id)}
+                  onDeleted={() => router.push("/events")}
+                  onError={(m) => setError(m)}
+                />
               </div>
             )}
           </form>

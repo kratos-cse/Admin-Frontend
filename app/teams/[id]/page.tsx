@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
+import DeleteRecordButton from "@/components/records/DeleteRecordButton";
+import { deleteTeam } from "@/lib/api/records";
 import { cancelTeam, listTeams, transferLeadership, updateTeam } from "@/lib/api/teams";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
 
 export default function TeamDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = String(params?.id || "");
   const { hasPermission, isSuperAdmin } = useAuth();
   const [team, setTeam] = useState<Record<string, unknown> | null>(null);
@@ -96,10 +99,20 @@ export default function TeamDetailPage() {
               </div>
             )}
             {isSuperAdmin && (
-              <button type="button" className="btn btn-danger" style={{ marginTop: 16 }} onClick={() => setConfirmCancel(true)}>
+              <button type="button" className="btn btn-ghost" style={{ marginTop: 16 }} onClick={() => setConfirmCancel(true)}>
                 Cancel team
               </button>
             )}
+            <DeleteRecordButton
+              title="Delete team permanently?"
+              message={`Hard-delete team "${name || id}" and its registration. Paid payments block deletion. Cancel team is the normal lifecycle action.`}
+              confirmLabel="Delete team"
+              label="Delete team"
+              style={{ marginTop: 12 }}
+              onDelete={() => deleteTeam(id)}
+              onDeleted={() => router.push("/teams")}
+              onError={(m) => setError(m)}
+            />
             {Array.isArray(team.members) ? (
               <div style={{ marginTop: 16 }}>
                 <h3>Members</h3>

@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
+import DeleteRecordButton from "@/components/records/DeleteRecordButton";
 import { listParticipants, updateParticipant } from "@/lib/api/participants";
+import { deleteParticipant } from "@/lib/api/records";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
 
 export default function ParticipantDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = String(params?.id || "");
   const { hasPermission } = useAuth();
   const canEdit = hasPermission("participant-edit");
@@ -110,6 +113,16 @@ export default function ParticipantDetailPage() {
             <p className="muted">View only — missing participant-edit permission.</p>
           )}
           {msg && <p className="muted">{msg}</p>}
+          <DeleteRecordButton
+            title="Delete participant profile?"
+            message="Hard-deletes this profile. Active team memberships, registrations, or paid payment history block deletion."
+            confirmLabel="Delete participant"
+            label="Delete participant"
+            style={{ marginTop: 16 }}
+            onDelete={() => deleteParticipant(id)}
+            onDeleted={() => router.push("/participants")}
+            onError={(m) => setError(m)}
+          />
         </form>
       </AdminShell>
     </RequireAdmin>

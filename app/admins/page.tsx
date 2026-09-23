@@ -15,6 +15,7 @@ import {
   updateAdminUser,
   updateRole,
 } from "@/lib/api/auth";
+import { deleteAdminUser } from "@/lib/api/records";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
 import { PERMISSION_CATALOG, shortId } from "@/lib/permissions";
@@ -69,7 +70,7 @@ function normalizeAdmins(raw: unknown): AdminRow[] {
 const PERM_GROUPS = Array.from(new Set(PERMISSION_CATALOG.map((p) => p.group)));
 
 export default function AdminsPage() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, admin: currentAdmin } = useAuth();
   const router = useRouter();
   const [admins, setAdmins] = useState<AdminRow[]>([]);
   const [roles, setRoles] = useState<RoleRow[]>([]);
@@ -84,6 +85,7 @@ export default function AdminsPage() {
   const [roleEdits, setRoleEdits] = useState<Record<string, string>>({});
   const [savingAdminId, setSavingAdminId] = useState<string | null>(null);
   const [deactivateId, setDeactivateId] = useState<string | null>(null);
+  const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const [newRoleName, setNewRoleName] = useState("");
@@ -325,10 +327,19 @@ export default function AdminsPage() {
                       {admin.is_active && (
                         <button
                           type="button"
-                          className="btn btn-danger"
+                          className="btn btn-ghost"
                           onClick={() => setDeactivateId(admin.admin_user_id)}
                         >
                           Deactivate
+                        </button>
+                      )}
+                      {admin.admin_user_id !== currentAdmin?.admin_user_id && (
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          onClick={() => setDeleteAdminId(admin.admin_user_id)}
+                        >
+                          Delete
                         </button>
                       )}
                     </div>
@@ -462,6 +473,29 @@ export default function AdminsPage() {
               await load();
             } catch (err) {
               setError(err instanceof ApiError ? err.message : "Failed");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
+        <ConfirmDialog
+          open={Boolean(deleteAdminId)}
+          title="Delete admin account permanently?"
+          message={`Hard-delete admin ${shortId(deleteAdminId)}. Deactivate is the normal offboarding action. You cannot delete yourself or the last SUPER ADMIN.`}
+          confirmLabel="Delete admin"
+          danger
+          busy={busy}
+          onCancel={() => setDeleteAdminId(null)}
+          onConfirm={async () => {
+            if (!deleteAdminId) return;
+            setBusy(true);
+            try {
+              await deleteAdminUser(deleteAdminId);
+              setDeleteAdminId(null);
+              flash("Admin deleted");
+              await load();
+            } catch (err) {
+              setError(err instanceof ApiError ? err.message : "Delete failed");
             } finally {
               setBusy(false);
             }
