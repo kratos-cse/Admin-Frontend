@@ -113,16 +113,35 @@ export default function TeamDetailPage() {
               onDeleted={() => router.push("/teams")}
               onError={(m) => setError(m)}
             />
-            {Array.isArray(team.members) ? (
+            {Array.isArray(team.members) && team.members.length > 0 ? (
               <div style={{ marginTop: 16 }}>
                 <h3>Members</h3>
-                <pre className="muted" style={{ whiteSpace: "pre-wrap", fontSize: 12 }}>
-                  {JSON.stringify(team.members, null, 2)}
-                </pre>
+                <div className="table-wrap">
+                  <table className="data">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Entry</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(team.members as Record<string, unknown>[]).map((m) => (
+                        <tr key={String(m.id)}>
+                          <td>{String(m.full_name || m.profile_id || "—")}</td>
+                          <td>{String(m.role || "—")}</td>
+                          <td>{String(m.status || "—")}</td>
+                          <td>{String(m.entry_source || "—")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ) : (
               <p className="muted" style={{ marginTop: 16 }}>
-                Full member payload may not be included in the admin team list response.
+                No member details in the current team list response.
               </p>
             )}
           </div>

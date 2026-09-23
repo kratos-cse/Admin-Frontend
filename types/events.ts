@@ -130,6 +130,6 @@ export function rosterSummary(
     substitutes ?? (teamMax != null && teamMin != null ? Math.max(0, Number(teamMax) - Number(teamMin)) : 0),
   );
   if (req <= 1 && subs <= 0) return "Individual";
-  if (subs > 0) return `${req} + ${subs} substitutes`;
-  return `${req} members`;
+  if (subs > 0) return `${req} required members · up to ${subs} substitutes`;
+  return `${req} required members`;
 }

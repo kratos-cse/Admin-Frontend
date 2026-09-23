@@ -71,6 +71,7 @@ export default function RegistrationsPage() {
                   <th>Event</th>
                   <th>Status</th>
                   <th>Payment</th>
+                  <th>Team roster</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -91,6 +92,17 @@ export default function RegistrationsPage() {
                         <span className="pill">{String(r.status)}</span>
                       </td>
                       <td>{pay ? String(pay.status) : "—"}</td>
+                      <td>
+                        {r.team
+                          ? (() => {
+                              const team = r.team as Record<string, unknown>;
+                              const req = team.required_member_count ?? team.team_min_size;
+                              const filled = team.mandatory_filled;
+                              if (req != null && filled != null) return `Mandatory ${filled}/${req}`;
+                              return team.name ? String(team.name) : "Team";
+                            })()
+                          : "Solo"}
+                      </td>
                       <td style={{ display: "flex", gap: 8 }}>
                         {hasPermission("registration-edit") && (
                           <button

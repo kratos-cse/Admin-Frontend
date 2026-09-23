@@ -13,6 +13,7 @@ import EventFormFields from "@/components/events/EventFormFields";
 import { deleteEvent } from "@/lib/api/records";
 import { closeEvent, getAdminEvent, openEvent, updateEvent, updateEventRules } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
+import { formatAdminError } from "@/lib/errors/adminMessages";
 import { useAuth } from "@/context/AuthProvider";
 import {
   emptyEventForm,
@@ -46,7 +47,7 @@ export default function EventDetailPage() {
       setEvent(data);
       setForm(formFromAdminEvent(data));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load");
+      setError(err instanceof ApiError ? formatAdminError(err.message) : "Failed to load");
     } finally {
       setLoading(false);
     }
@@ -70,7 +71,7 @@ export default function EventDetailPage() {
       setForm(formFromAdminEvent(updated));
       setMsg("Event saved.");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Save failed");
+      setError(err instanceof ApiError ? formatAdminError(err.message) : "Save failed");
     } finally {
       setBusy(false);
     }
@@ -86,7 +87,7 @@ export default function EventDetailPage() {
       await load();
       setMsg(confirm === "open" ? "Registration opened." : "Registration closed.");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Action failed");
+      setError(err instanceof ApiError ? formatAdminError(err.message) : "Action failed");
     } finally {
       setBusy(false);
     }
