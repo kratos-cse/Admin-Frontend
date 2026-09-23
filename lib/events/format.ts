@@ -1,22 +1,13 @@
 /** Shared event display helpers — same backend values as participant app. */
 
-export type RegistrationAvailability =
-  | "OPEN"
-  | "EVENT_CLOSED"
-  | "NOT_YET_OPEN"
-  | "WINDOW_CLOSED"
-  | "FULL";
+import type { EventRegistrationStatus, EventVisibility, RegistrationAvailability } from "@/types/events";
 
-export function formatEventFee(fee: number | string | null | undefined): string {
-  if (fee == null || fee === "") return "—";
-  const n = Number(fee);
-  if (Number.isNaN(n)) return String(fee);
-  if (n === 0) return "Free";
-  const hasFraction = Math.abs(n % 1) > 0;
-  return `₹${n.toLocaleString("en-IN", {
-    minimumFractionDigits: hasFraction ? 2 : 0,
-    maximumFractionDigits: hasFraction ? 2 : 0,
-  })}`;
+export function visibilityLabel(visibility?: EventVisibility | string | null): string {
+  return String(visibility || "").toUpperCase() === "PUBLISHED" ? "Published" : "Unpublished";
+}
+
+export function registrationStatusLabel(status?: EventRegistrationStatus | string | null): string {
+  return String(status || "").toUpperCase() === "OPEN" ? "Open" : "Closed";
 }
 
 export function registrationAvailabilityLabel(
@@ -27,11 +18,7 @@ export function registrationAvailabilityLabel(
       return "Registration open";
     case "FULL":
       return "Event full";
-    case "NOT_YET_OPEN":
-      return "Registration opens soon";
-    case "WINDOW_CLOSED":
-      return "Registration window closed";
-    case "EVENT_CLOSED":
+    case "CLOSED":
       return "Registration closed";
     default:
       return "Registration state unknown";

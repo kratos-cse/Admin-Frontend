@@ -5,13 +5,20 @@ import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import PageHeader from "@/components/ui/PageHeader";
-import StatusBadge from "@/components/ui/StatusBadge";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
-import { closeEvent, listEvents, openEvent } from "@/lib/api/events";
+import {
+  closeRegistration,
+  listEvents,
+  openRegistration,
+  publishEvent,
+  unpublishEvent,
+} from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
-import { formatEventFee, registrationAvailabilityLabel } from "@/lib/events/format";
+import { registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
 import { rosterSummary, type EventListItem } from "@/types/events";
+
+type ConfirmAction = "publish" | "unpublish" | "open-registration" | "close-registration";
 
 export default function EventsPage() {
   const { hasPermission } = useAuth();
@@ -19,7 +26,7 @@ export default function EventsPage() {
   const [items, setItems] = useState<EventListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState<{ id: string; action: "open" | "close" } | null>(null);
+  const [confirm, setConfirm] = useState<{ id: string; action: ConfirmAction } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -43,8 +50,10 @@ export default function EventsPage() {
     if (!confirm) return;
     setBusy(true);
     try {
-      if (confirm.action === "open") await openEvent(confirm.id);
-      else await closeEvent(confirm.id);
+      if (confirm.action === "publish") await publishEvent(confirm.id);
+      else if (confirm.action === "unpublish") await unpublishEvent(confirm.id);
+      else if (confirm.action === "open-registration") await openRegistration(confirm.id);
+      else await closeRegistration(confirm.id);
       setConfirm(null);
       await load();
     } catch (err) {
@@ -54,13 +63,48 @@ export default function EventsPage() {
     }
   }
 
+  function confirmCopy(action: ConfirmAction) {
+    switch (action) {
+      case "publish":
+        return {
+          title: "Publish event?",
+          message: "The event will appear on the public website. Registration stays closed until you open it.",
+          confirmLabel: "Publish",
+          danger: false,
+        };
+      case "unpublish":
+        return {
+          title: "Unpublish event?",
+          message: "The event will be hidden from the public website and registration will close.",
+          confirmLabel: "Unpublish",
+          danger: true,
+        };
+      case "open-registration":
+        return {
+          title: "Open registration?",
+          message: "Participants will be able to register for this published event.",
+          confirmLabel: "Open registration",
+          danger: false,
+        };
+      default:
+        return {
+          title: "Close registration?",
+          message: "New registrations will stop. The event remains visible on the website.",
+          confirmLabel: "Close registration",
+          danger: true,
+        };
+    }
+  }
+
+  const dialog = confirm ? confirmCopy(confirm.action) : null;
+
   return (
     <RequireAdmin>
       <AdminShell>
         <PageHeader
           eyebrow="Catalogue"
           title="Events"
-          description="Create, configure roster rules, preview, then open registration."
+          description="Create events, publish to the website, then open registration when ready."
           actions={
             canManage ? (
               <Link href="/events/new" className="btn btn-primary">
@@ -84,7 +128,7 @@ export default function EventsPage() {
                   <th>Name</th>
                   <th>Category</th>
                   <th>Roster</th>
-                  <th>Status</th>
+                  <th>Visibility</th>
                   <th>Registration</th>
                   <th>Fee</th>
                   <th>Actions</th>
@@ -105,13 +149,9 @@ export default function EventsPage() {
                         ev.team_max_size,
                       )}
                     </td>
-                    <td>
-                      <StatusBadge status={ev.status} />
-                    </td>
-                    <td className="muted" style={{ fontSize: "0.9rem" }}>
-                      {registrationAvailabilityLabel(ev.registration_availability)}
-                    </td>
-                    <td>{formatEventFee(ev.fee)}</td>
+                    <td>{visibilityLabel(ev.visibility).toUpperCase()}</td>
+                    <td>{registrationStatusLabel(ev.registration_status).toUpperCase()}</td>
+                    <td>{ev.fee != null ? `₹${ev.fee}` : "—"}</td>
                     <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <Link href={`/events/${ev.id}`} className="btn btn-ghost">
                         Edit
@@ -119,22 +159,40 @@ export default function EventsPage() {
                       <Link href={`/events/${ev.id}/preview`} className="btn btn-ghost">
                         Preview
                       </Link>
-                      {canManage && ev.status !== "OPEN" && (
+                      {canManage && ev.visibility !== "PUBLISHED" && (
                         <button
                           type="button"
                           className="btn btn-ghost"
-                          onClick={() => setConfirm({ id: String(ev.id), action: "open" })}
+                          onClick={() => setConfirm({ id: String(ev.id), action: "publish" })}
                         >
-                          Open
+                          Publish
                         </button>
                       )}
-                      {canManage && ev.status === "OPEN" && (
+                      {canManage && ev.visibility === "PUBLISHED" && (
                         <button
                           type="button"
                           className="btn btn-ghost"
-                          onClick={() => setConfirm({ id: String(ev.id), action: "close" })}
+                          onClick={() => setConfirm({ id: String(ev.id), action: "unpublish" })}
                         >
-                          Close
+                          Unpublish
+                        </button>
+                      )}
+                      {canManage && ev.visibility === "PUBLISHED" && ev.registration_status !== "OPEN" && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => setConfirm({ id: String(ev.id), action: "open-registration" })}
+                        >
+                          Open registration
+                        </button>
+                      )}
+                      {canManage && ev.registration_status === "OPEN" && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => setConfirm({ id: String(ev.id), action: "close-registration" })}
+                        >
+                          Close registration
                         </button>
                       )}
                     </td>
@@ -146,14 +204,10 @@ export default function EventsPage() {
         )}
         <ConfirmDialog
           open={Boolean(confirm)}
-          title={confirm?.action === "open" ? "Open registration?" : "Close registration?"}
-          message={
-            confirm?.action === "open"
-              ? "Participants will be able to register for this event."
-              : "New registrations will stop. Existing teams are unchanged."
-          }
-          confirmLabel={confirm?.action === "open" ? "Open" : "Close"}
-          danger={confirm?.action === "close"}
+          title={dialog?.title || ""}
+          message={dialog?.message || ""}
+          confirmLabel={dialog?.confirmLabel || "Confirm"}
+          danger={dialog?.danger}
           busy={busy}
           onConfirm={() => void runConfirm()}
           onCancel={() => setConfirm(null)}

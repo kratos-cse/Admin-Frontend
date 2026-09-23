@@ -8,7 +8,7 @@ import type {
 } from "@/types/events";
 
 export function listEvents() {
-  return apiFetch<EventListItem[]>("/events");
+  return apiFetchData<EventListItem[]>("/admin/events", { auth: true });
 }
 
 /** Public participant-facing detail (flat rules fields). */
@@ -37,10 +37,24 @@ export function updateEventRules(eventId: string, body: AdminRegistrationRulesUp
   });
 }
 
-export function openEvent(eventId: string) {
-  return apiFetchData(`/admin/events/${eventId}/open`, { method: "POST", auth: true });
+export function publishEvent(eventId: string) {
+  return apiFetchData<AdminEvent>(`/admin/events/${eventId}/publish`, { method: "POST", auth: true });
 }
 
-export function closeEvent(eventId: string) {
-  return apiFetchData(`/admin/events/${eventId}/close`, { method: "POST", auth: true });
+export function unpublishEvent(eventId: string) {
+  return apiFetchData<AdminEvent>(`/admin/events/${eventId}/unpublish`, { method: "POST", auth: true });
+}
+
+export function openRegistration(eventId: string) {
+  return apiFetchData<AdminEvent>(`/admin/events/${eventId}/open-registration`, {
+    method: "POST",
+    auth: true,
+  });
+}
+
+export function closeRegistration(eventId: string) {
+  return apiFetchData<AdminEvent>(`/admin/events/${eventId}/close-registration`, {
+    method: "POST",
+    auth: true,
+  });
 }

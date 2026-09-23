@@ -56,7 +56,7 @@ export default function NewEventPage() {
               {busy ? "Creating…" : "Create event"}
             </button>
             <p className="muted" style={{ margin: 0, alignSelf: "center" }}>
-              Tip: keep status Closed until configuration looks right, then Open from the editor.
+              Tip: new events start unpublished. Publish to the website, then open registration from the editor.
             </p>
           </div>
         </form>

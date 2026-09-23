@@ -1,12 +1,8 @@
 /** Event + registration-rule types aligned with kratos-backend admin schemas. */
 
-export type EventStatus = "OPEN" | "CLOSED" | "COMPLETED" | "CANCELLED";
-export type RegistrationAvailability =
-  | "OPEN"
-  | "EVENT_CLOSED"
-  | "NOT_YET_OPEN"
-  | "WINDOW_CLOSED"
-  | "FULL";
+export type EventVisibility = "PUBLISHED" | "UNPUBLISHED";
+export type EventRegistrationStatus = "OPEN" | "CLOSED";
+export type RegistrationAvailability = "OPEN" | "CLOSED" | "FULL";
 export type EventCategory = "TECHNICAL" | "PLAYGROUND" | "SPARK" | "ONLINE" | "CULTURAL";
 export type EventSlot = "MORNING" | "AFTERNOON" | "EVENING" | "FULL_DAY" | "MULTI_DAY";
 export type RegistrationMode = "INDIVIDUAL_ONLY" | "TEAM_ONLY" | "TEAM_OR_INDIVIDUAL";
@@ -25,8 +21,6 @@ export interface EventRules {
   capacity_type: CapacityType;
   member_registration_mode: MemberRegistrationMode;
   custom_fields: Record<string, unknown> | null;
-  registration_opens_at: string | null;
-  registration_closes_at: string | null;
 }
 
 export interface AdminEvent {
@@ -48,16 +42,15 @@ export interface AdminEvent {
   starts_at: string | null;
   ends_at: string | null;
   slot: EventSlot | null;
-  status: EventStatus;
+  visibility: EventVisibility;
+  registration_status: EventRegistrationStatus;
   registration_open?: boolean;
   registration_availability?: RegistrationAvailability;
   spots_remaining?: number | null;
-  registration_opens_at?: string | null;
-  registration_closes_at?: string | null;
   rules: EventRules;
 }
 
-/** Public catalogue row from GET /events */
+/** Admin catalogue row from GET /admin/events */
 export interface EventListItem {
   id: string;
   name: string;
@@ -69,12 +62,11 @@ export interface EventListItem {
   starts_at?: string | null;
   ends_at?: string | null;
   slot?: EventSlot | null;
-  status: EventStatus;
+  visibility: EventVisibility;
+  registration_status: EventRegistrationStatus;
   registration_open?: boolean;
   registration_availability?: RegistrationAvailability;
   spots_remaining?: number | null;
-  registration_opens_at?: string | null;
-  registration_closes_at?: string | null;
   allow_individual?: boolean;
   registration_mode?: RegistrationMode | null;
   team_min_size: number;
@@ -98,7 +90,6 @@ export interface AdminEventCreateBody {
   starts_at?: string | null;
   ends_at?: string | null;
   slot?: EventSlot | null;
-  status?: EventStatus;
   registration_mode?: RegistrationMode;
   team_min_size?: number;
   team_max_size?: number;
@@ -109,12 +100,22 @@ export interface AdminEventCreateBody {
   capacity_type?: CapacityType;
   member_registration_mode?: MemberRegistrationMode;
   custom_fields?: Record<string, unknown> | null;
-  registration_opens_at?: string | null;
-  registration_closes_at?: string | null;
 }
 
 export type AdminEventUpdateBody = Partial<
-  Omit<AdminEventCreateBody, "registration_mode" | "team_min_size" | "team_max_size" | "required_member_count" | "substitute_count" | "allow_team_invite_flow" | "requires_qr_checkin" | "capacity_type" | "member_registration_mode" | "custom_fields" | "registration_opens_at" | "registration_closes_at">
+  Omit<
+    AdminEventCreateBody,
+    | "registration_mode"
+    | "team_min_size"
+    | "team_max_size"
+    | "required_member_count"
+    | "substitute_count"
+    | "allow_team_invite_flow"
+    | "requires_qr_checkin"
+    | "capacity_type"
+    | "member_registration_mode"
+    | "custom_fields"
+  >
 > & {
   google_sheet_id?: string | null;
   google_sheet_url?: string | null;
@@ -131,8 +132,6 @@ export type AdminRegistrationRulesUpdateBody = Partial<{
   capacity_type: CapacityType;
   member_registration_mode: MemberRegistrationMode;
   custom_fields: Record<string, unknown> | null;
-  registration_opens_at: string | null;
-  registration_closes_at: string | null;
 }>;
 
 export function rosterSummary(
@@ -146,8 +145,6 @@ export function rosterSummary(
     substitutes ?? (teamMax != null && teamMin != null ? Math.max(0, Number(teamMax) - Number(teamMin)) : 0),
   );
   if (req <= 1 && subs <= 0) return "Individual";
-  const memberWord = req === 1 ? "member" : "members";
-  const subWord = subs === 1 ? "substitute" : "substitutes";
-  if (subs > 0) return `${req} required ${memberWord} · up to ${subs} ${subWord}`;
-  return `${req} required ${memberWord}`;
+  if (subs > 0) return `${req} + ${subs}`;
+  return `${req} members`;
 }

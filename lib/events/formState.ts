@@ -4,7 +4,6 @@ import type {
   CapacityType,
   EventCategory,
   EventSlot,
-  EventStatus,
   MemberRegistrationMode,
   RegistrationMode,
 } from "@/types/events";
@@ -35,8 +34,6 @@ export const CAPACITY_TYPES: { value: CapacityType; label: string }[] = [
   { value: "TEAMS", label: "Count teams" },
 ];
 
-export const EVENT_STATUSES: EventStatus[] = ["OPEN", "CLOSED", "COMPLETED", "CANCELLED"];
-
 export type EventFormState = {
   name: string;
   tagline: string;
@@ -52,7 +49,6 @@ export type EventFormState = {
   starts_at: string;
   ends_at: string;
   slot: string;
-  status: EventStatus;
   registration_mode: RegistrationMode;
   required_member_count: string;
   substitute_count: string;
@@ -60,8 +56,6 @@ export type EventFormState = {
   requires_qr_checkin: boolean;
   capacity_type: CapacityType;
   member_registration_mode: MemberRegistrationMode;
-  registration_opens_at: string;
-  registration_closes_at: string;
 };
 
 export function emptyEventForm(): EventFormState {
@@ -80,7 +74,6 @@ export function emptyEventForm(): EventFormState {
     starts_at: "",
     ends_at: "",
     slot: "",
-    status: "CLOSED",
     registration_mode: "TEAM_ONLY",
     required_member_count: "5",
     substitute_count: "2",
@@ -88,8 +81,6 @@ export function emptyEventForm(): EventFormState {
     requires_qr_checkin: true,
     capacity_type: "TEAMS",
     member_registration_mode: "SELF_ENTRY",
-    registration_opens_at: "",
-    registration_closes_at: "",
   };
 }
 
@@ -125,7 +116,6 @@ export function formFromAdminEvent(ev: AdminEvent): EventFormState {
     starts_at: toLocalInput(ev.starts_at),
     ends_at: toLocalInput(ev.ends_at),
     slot: ev.slot || "",
-    status: ev.status || "CLOSED",
     registration_mode: r?.registration_mode || "TEAM_OR_INDIVIDUAL",
     required_member_count: String(r?.required_member_count ?? r?.team_min_size ?? 1),
     substitute_count: String(r?.substitute_count ?? Math.max(0, (r?.team_max_size ?? 1) - (r?.team_min_size ?? 1))),
@@ -133,8 +123,6 @@ export function formFromAdminEvent(ev: AdminEvent): EventFormState {
     requires_qr_checkin: r?.requires_qr_checkin !== false,
     capacity_type: r?.capacity_type || "PARTICIPANTS",
     member_registration_mode: r?.member_registration_mode || "SELF_ENTRY",
-    registration_opens_at: toLocalInput(r?.registration_opens_at),
-    registration_closes_at: toLocalInput(r?.registration_closes_at),
   };
 }
 
@@ -169,7 +157,6 @@ export function toCreateBody(form: EventFormState): AdminEventCreateBody {
     starts_at: fromLocalInput(form.starts_at),
     ends_at: fromLocalInput(form.ends_at),
     slot: (form.slot || null) as EventSlot | null,
-    status: form.status,
     registration_mode: form.registration_mode,
     required_member_count: required,
     substitute_count: substitutes,
@@ -179,8 +166,6 @@ export function toCreateBody(form: EventFormState): AdminEventCreateBody {
     requires_qr_checkin: form.requires_qr_checkin,
     capacity_type: form.capacity_type,
     member_registration_mode: form.member_registration_mode,
-    registration_opens_at: fromLocalInput(form.registration_opens_at),
-    registration_closes_at: fromLocalInput(form.registration_closes_at),
   };
 }
 
@@ -200,7 +185,6 @@ export function toDetailsPatch(form: EventFormState) {
     starts_at: fromLocalInput(form.starts_at),
     ends_at: fromLocalInput(form.ends_at),
     slot: (form.slot || null) as EventSlot | null,
-    status: form.status,
   };
 }
 
@@ -216,7 +200,5 @@ export function toRulesPatch(form: EventFormState) {
     requires_qr_checkin: form.requires_qr_checkin,
     capacity_type: form.capacity_type,
     member_registration_mode: form.member_registration_mode,
-    registration_opens_at: fromLocalInput(form.registration_opens_at),
-    registration_closes_at: fromLocalInput(form.registration_closes_at),
   };
 }

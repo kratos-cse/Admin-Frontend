@@ -3,7 +3,6 @@
 import {
   CAPACITY_TYPES,
   CATEGORIES,
-  EVENT_STATUSES,
   MEMBER_MODES,
   REGISTRATION_MODES,
   SLOTS,
@@ -16,7 +15,6 @@ type Props = {
   form: EventFormState;
   disabled?: boolean;
   onChange: (next: EventFormState) => void;
-  showStatus?: boolean;
 };
 
 function Field({
@@ -43,7 +41,7 @@ function Field({
   );
 }
 
-export default function EventFormFields({ form, disabled, onChange, showStatus = true }: Props) {
+export default function EventFormFields({ form, disabled, onChange }: Props) {
   const set = <K extends keyof EventFormState>(key: K, value: EventFormState[K]) =>
     onChange({ ...form, [key]: value });
 
@@ -128,22 +126,6 @@ export default function EventFormFields({ form, disabled, onChange, showStatus =
         <Field id="venue" label="Venue">
           <input id="venue" disabled={disabled} value={form.venue} onChange={(e) => set("venue", e.target.value)} />
         </Field>
-        {showStatus && (
-          <Field id="status" label="Status" hint="Use Closed while drafting. Open when registration should go live.">
-            <select
-              id="status"
-              disabled={disabled}
-              value={form.status}
-              onChange={(e) => set("status", e.target.value as EventFormState["status"])}
-            >
-              {EVENT_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
       </section>
 
       <section className="card">
@@ -162,26 +144,6 @@ export default function EventFormFields({ form, disabled, onChange, showStatus =
             ))}
           </select>
         </Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field id="registration_opens_at" label="Registration opens">
-            <input
-              id="registration_opens_at"
-              type="datetime-local"
-              disabled={disabled}
-              value={form.registration_opens_at}
-              onChange={(e) => set("registration_opens_at", e.target.value)}
-            />
-          </Field>
-          <Field id="registration_closes_at" label="Registration closes">
-            <input
-              id="registration_closes_at"
-              type="datetime-local"
-              disabled={disabled}
-              value={form.registration_closes_at}
-              onChange={(e) => set("registration_closes_at", e.target.value)}
-            />
-          </Field>
-        </div>
       </section>
 
       {team && (
