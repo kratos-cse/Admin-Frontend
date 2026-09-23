@@ -84,6 +84,7 @@ export async function apiFetch<T = unknown>(path: string, options: FetchOptions 
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      cache: method === "GET" ? "no-store" : "default",
     });
   } catch (err) {
     throw new ApiError({

@@ -1,6 +1,12 @@
 /** Event + registration-rule types aligned with kratos-backend admin schemas. */
 
 export type EventStatus = "OPEN" | "CLOSED" | "COMPLETED" | "CANCELLED";
+export type RegistrationAvailability =
+  | "OPEN"
+  | "EVENT_CLOSED"
+  | "NOT_YET_OPEN"
+  | "WINDOW_CLOSED"
+  | "FULL";
 export type EventCategory = "TECHNICAL" | "PLAYGROUND" | "SPARK" | "ONLINE" | "CULTURAL";
 export type EventSlot = "MORNING" | "AFTERNOON" | "EVENING" | "FULL_DAY" | "MULTI_DAY";
 export type RegistrationMode = "INDIVIDUAL_ONLY" | "TEAM_ONLY" | "TEAM_OR_INDIVIDUAL";
@@ -43,6 +49,11 @@ export interface AdminEvent {
   ends_at: string | null;
   slot: EventSlot | null;
   status: EventStatus;
+  registration_open?: boolean;
+  registration_availability?: RegistrationAvailability;
+  spots_remaining?: number | null;
+  registration_opens_at?: string | null;
+  registration_closes_at?: string | null;
   rules: EventRules;
 }
 
@@ -60,7 +71,12 @@ export interface EventListItem {
   slot?: EventSlot | null;
   status: EventStatus;
   registration_open?: boolean;
+  registration_availability?: RegistrationAvailability;
+  spots_remaining?: number | null;
+  registration_opens_at?: string | null;
+  registration_closes_at?: string | null;
   allow_individual?: boolean;
+  registration_mode?: RegistrationMode | null;
   team_min_size: number;
   team_max_size: number;
   required_member_count?: number;
@@ -130,6 +146,8 @@ export function rosterSummary(
     substitutes ?? (teamMax != null && teamMin != null ? Math.max(0, Number(teamMax) - Number(teamMin)) : 0),
   );
   if (req <= 1 && subs <= 0) return "Individual";
-  if (subs > 0) return `${req} required members · up to ${subs} substitutes`;
-  return `${req} required members`;
+  const memberWord = req === 1 ? "member" : "members";
+  const subWord = subs === 1 ? "substitute" : "substitutes";
+  if (subs > 0) return `${req} required ${memberWord} · up to ${subs} ${subWord}`;
+  return `${req} required ${memberWord}`;
 }

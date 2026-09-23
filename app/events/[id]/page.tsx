@@ -23,6 +23,7 @@ import {
   toRulesPatch,
   type EventFormState,
 } from "@/lib/events/formState";
+import { registrationAvailabilityLabel } from "@/lib/events/format";
 import type { AdminEvent } from "@/types/events";
 
 export default function EventDetailPage() {
@@ -103,6 +104,11 @@ export default function EventDetailPage() {
           actions={
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <StatusBadge status={event?.status} />
+              {event?.registration_availability ? (
+                <span className="muted" style={{ fontSize: "0.9rem" }}>
+                  {registrationAvailabilityLabel(event.registration_availability)}
+                </span>
+              ) : null}
               <Link href="/events" className="btn btn-ghost">
                 ← Events
               </Link>

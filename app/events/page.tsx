@@ -10,6 +10,7 @@ import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import { closeEvent, listEvents, openEvent } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
+import { formatEventFee, registrationAvailabilityLabel } from "@/lib/events/format";
 import { rosterSummary, type EventListItem } from "@/types/events";
 
 export default function EventsPage() {
@@ -84,6 +85,7 @@ export default function EventsPage() {
                   <th>Category</th>
                   <th>Roster</th>
                   <th>Status</th>
+                  <th>Registration</th>
                   <th>Fee</th>
                   <th>Actions</th>
                 </tr>
@@ -106,7 +108,10 @@ export default function EventsPage() {
                     <td>
                       <StatusBadge status={ev.status} />
                     </td>
-                    <td>{ev.fee != null ? `₹${ev.fee}` : "—"}</td>
+                    <td className="muted" style={{ fontSize: "0.9rem" }}>
+                      {registrationAvailabilityLabel(ev.registration_availability)}
+                    </td>
+                    <td>{formatEventFee(ev.fee)}</td>
                     <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <Link href={`/events/${ev.id}`} className="btn btn-ghost">
                         Edit

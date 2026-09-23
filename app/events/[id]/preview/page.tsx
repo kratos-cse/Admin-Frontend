@@ -9,6 +9,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { getAdminEvent } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
+import { formatEventFee, registrationAvailabilityLabel } from "@/lib/events/format";
 import { rosterSummary, type AdminEvent } from "@/types/events";
 import { REGISTRATION_MODES, MEMBER_MODES } from "@/lib/events/formState";
 
@@ -69,8 +70,11 @@ export default function EventPreviewPage() {
         {error && <p className="state-error">{error}</p>}
         {event && rules && (
           <div className="card" style={{ maxWidth: 640 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
               <StatusBadge status={event.status} />
+              {event.registration_availability ? (
+                <span className="pill">{registrationAvailabilityLabel(event.registration_availability)}</span>
+              ) : null}
               {event.category && <span className="pill">{event.category}</span>}
             </div>
             {event.tagline && <p style={{ fontSize: "1.1rem", marginTop: 0 }}>{event.tagline}</p>}
@@ -87,7 +91,7 @@ export default function EventPreviewPage() {
             <Row label="Registration" value={modeLabel} />
             <Row label="Members join" value={memberLabel} />
             <Row label="Invite links" value={rules.allow_team_invite_flow ? "Enabled" : "Off"} />
-            <Row label="Fee" value={event.fee != null ? `₹${event.fee}` : "Free / unset"} />
+            <Row label="Fee" value={formatEventFee(event.fee)} />
             <Row
               label="Capacity"
               value={
