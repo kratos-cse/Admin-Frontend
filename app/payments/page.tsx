@@ -98,10 +98,10 @@ export default function PaymentsPage() {
                           Refund
                         </button>
                       )}
-                      {isSuperAdmin && String(p.status) !== "PAID" && String(p.status) !== "REFUNDED" && (
+                      {isSuperAdmin && (
                         <DeleteRecordButton
                           title="Delete payment record?"
-                          message={`Permanently remove payment ${String(p.id).slice(0, 8)}… (${String(p.status)}). Paid and refunded records cannot be deleted.`}
+                          message={`Permanently remove payment ${String(p.id).slice(0, 8)}… (${String(p.status)}). This unlinks the payment from any registration and cannot be undone.`}
                           confirmLabel="Delete payment"
                           label="Delete"
                           className="btn btn-danger"
