@@ -6,6 +6,7 @@ import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import { listTeams } from "@/lib/api/teams";
 import { ApiError } from "@/lib/api/client";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 export default function TeamsPage() {
   const [status, setStatus] = useState("");
@@ -51,10 +52,12 @@ export default function TeamsPage() {
             <option value="CANCELLED">CANCELLED</option>
           </select>
         </div>
-        {loading && <p className="muted">Loading…</p>}
         {error && <p className="state-error">{error}</p>}
-        {!loading && items.length === 0 && <p className="muted">No teams.</p>}
-        {items.length > 0 && (
+        {loading ? (
+          <TableSkeleton columns={4} label="Loading teams" />
+        ) : items.length === 0 ? (
+          <p className="muted">No teams.</p>
+        ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>

@@ -11,6 +11,7 @@ import { deleteTeam } from "@/lib/api/records";
 import { cancelTeam, listTeams, transferLeadership, updateTeam } from "@/lib/api/teams";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
+import DetailFormSkeleton from "@/components/ui/DetailFormSkeleton";
 
 export default function TeamDetailPage() {
   const params = useParams();
@@ -55,10 +56,10 @@ export default function TeamDetailPage() {
             <Link href="/teams">← Teams</Link> · {id}
           </p>
         </div>
-        {loading && <p className="muted">Loading…</p>}
         {error && <p className="state-error">{error}</p>}
+        {loading ? <DetailFormSkeleton fields={4} label="Loading team" /> : null}
         {!loading && !team && <p className="muted">Team not found in current list window. Try from Teams list.</p>}
-        {team && (
+        {!loading && team && (
           <div className="card" style={{ maxWidth: 520 }}>
             <p className="muted">Status · {String(team.status)}</p>
             <div className="field">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import PageHeader from "@/components/ui/PageHeader";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import {
   closeRegistration,
@@ -113,14 +114,16 @@ export default function EventsPage() {
             ) : undefined
           }
         />
-        {loading && <p className="muted">Loading…</p>}
         {error && (
           <p className="state-error" role="alert">
             {error}
           </p>
         )}
-        {!loading && items.length === 0 && <p className="muted">No events yet.</p>}
-        {items.length > 0 && (
+        {loading ? (
+          <TableSkeleton columns={7} label="Loading events" />
+        ) : items.length === 0 ? (
+          <p className="muted">No events yet.</p>
+        ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>

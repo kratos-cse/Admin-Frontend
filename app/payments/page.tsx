@@ -5,6 +5,7 @@ import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import DeleteRecordButton from "@/components/records/DeleteRecordButton";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import { listPayments, refundPayment } from "@/lib/api/payments";
 import { deletePayment } from "@/lib/api/records";
 import { ApiError } from "@/lib/api/client";
@@ -58,10 +59,12 @@ export default function PaymentsPage() {
             <option value="REFUNDED">REFUNDED</option>
           </select>
         </div>
-        {loading && <p className="muted">Loading…</p>}
         {error && <p className="state-error">{error}</p>}
-        {!loading && items.length === 0 && <p className="muted">No payments.</p>}
-        {items.length > 0 && (
+        {loading ? (
+          <TableSkeleton columns={7} label="Loading payments" />
+        ) : items.length === 0 ? (
+          <p className="muted">No payments.</p>
+        ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>
@@ -95,7 +98,7 @@ export default function PaymentsPage() {
                           Refund
                         </button>
                       )}
-                      {String(p.status) !== "PAID" && String(p.status) !== "REFUNDED" && (
+                      {isSuperAdmin && String(p.status) !== "PAID" && String(p.status) !== "REFUNDED" && (
                         <DeleteRecordButton
                           title="Delete payment record?"
                           message={`Permanently remove payment ${String(p.id).slice(0, 8)}… (${String(p.status)}). Paid and refunded records cannot be deleted.`}

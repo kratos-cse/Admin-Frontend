@@ -6,6 +6,7 @@ import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import { listParticipants } from "@/lib/api/participants";
 import { ApiError } from "@/lib/api/client";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 export default function ParticipantsPage() {
   const [q, setQ] = useState("");
@@ -60,14 +61,16 @@ export default function ParticipantsPage() {
             {total != null ? `${total} total` : `${items.length} shown`} · skip {skip}
           </span>
         </div>
-        {loading && <p className="muted">Loading…</p>}
         {error && (
           <p className="state-error" role="alert">
             {error}
           </p>
         )}
-        {!loading && !error && items.length === 0 && <p className="muted">No participants found.</p>}
-        {items.length > 0 && (
+        {loading ? (
+          <TableSkeleton columns={5} label="Loading participants" />
+        ) : items.length === 0 ? (
+          <p className="muted">No participants found.</p>
+        ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>

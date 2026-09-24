@@ -10,6 +10,7 @@ import { listParticipants, updateParticipant } from "@/lib/api/participants";
 import { deleteParticipant } from "@/lib/api/records";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
+import DetailFormSkeleton from "@/components/ui/DetailFormSkeleton";
 
 export default function ParticipantDetailPage() {
   const params = useParams();
@@ -87,12 +88,13 @@ export default function ParticipantDetailPage() {
             <Link href="/participants">← Back</Link> · {id}
           </p>
         </div>
-        {loading && <p className="muted">Loading…</p>}
         {error && (
           <p className="state-error" role="alert">
             {error}
           </p>
         )}
+        {loading ? <DetailFormSkeleton fields={6} label="Loading participant" /> : null}
+        {!loading && (
         <form className="card" style={{ maxWidth: 520 }} onSubmit={onSave}>
           {(Object.keys(form) as (keyof typeof form)[]).map((key) => (
             <div className="field" key={key}>
@@ -124,6 +126,7 @@ export default function ParticipantDetailPage() {
             onError={(m) => setError(m)}
           />
         </form>
+        )}
       </AdminShell>
     </RequireAdmin>
   );

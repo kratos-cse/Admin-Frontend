@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import PageHeader from "@/components/ui/PageHeader";
+import DetailFormSkeleton from "@/components/ui/DetailFormSkeleton";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import DeleteRecordButton from "@/components/records/DeleteRecordButton";
 import EventFormFields from "@/components/events/EventFormFields";
@@ -138,14 +139,14 @@ export default function EventDetailPage() {
             </div>
           }
         />
-        {loading && <p className="muted">Loading…</p>}
         {error && (
           <p className="state-error" role="alert">
             {error}
           </p>
         )}
         {msg && <p className="muted">{msg}</p>}
-        {event && (
+        {loading ? <DetailFormSkeleton fields={10} label="Loading event" /> : null}
+        {!loading && event && (
           <>
             <div className="card" style={{ maxWidth: 720, marginBottom: 16, display: "grid", gap: 16 }}>
               <div>

@@ -6,6 +6,7 @@ import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import DeleteRecordButton from "@/components/records/DeleteRecordButton";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import { cancelRegistration, listRegistrations, updateRegistration } from "@/lib/api/registrations";
 import { deleteRegistration } from "@/lib/api/records";
 import { ApiError } from "@/lib/api/client";
@@ -59,10 +60,12 @@ export default function RegistrationsPage() {
             <option value="CANCELLED">CANCELLED</option>
           </select>
         </div>
-        {loading && <p className="muted">Loading…</p>}
         {error && <p className="state-error" role="alert">{error}</p>}
-        {!loading && items.length === 0 && <p className="muted">No registrations.</p>}
-        {items.length > 0 && (
+        {loading ? (
+          <TableSkeleton columns={6} label="Loading registrations" />
+        ) : items.length === 0 ? (
+          <p className="muted">No registrations.</p>
+        ) : (
           <div className="table-wrap">
             <table className="data">
               <thead>
