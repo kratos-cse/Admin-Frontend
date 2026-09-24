@@ -81,6 +81,20 @@ export default function RegistrationsPage() {
               <tbody>
                 {items.map((r) => {
                   const pay = r.payment as Record<string, unknown> | undefined;
+                  const registrationType = String(r.registration_type || "");
+                  const team = r.team as Record<string, unknown> | undefined;
+                  const rosterLabel =
+                    registrationType === "TEAM" && team
+                      ? (() => {
+                          const name = team.name ? String(team.name) : "Team";
+                          const req = team.required_member_count;
+                          const filled = team.mandatory_filled;
+                          if (req != null && filled != null) return `${name} · ${filled}/${req}`;
+                          return name;
+                        })()
+                      : registrationType === "SOLO"
+                        ? "Solo"
+                        : "—";
                   return (
                     <tr key={String(r.id)}>
                       <td>{String(r.id).slice(0, 8)}…</td>
@@ -94,18 +108,8 @@ export default function RegistrationsPage() {
                       <td>
                         <span className="pill">{String(r.status)}</span>
                       </td>
-                      <td>{pay ? String(pay.status) : "—"}</td>
-                      <td>
-                        {r.team
-                          ? (() => {
-                              const team = r.team as Record<string, unknown>;
-                              const req = team.required_member_count ?? team.team_min_size;
-                              const filled = team.mandatory_filled;
-                              if (req != null && filled != null) return `Mandatory ${filled}/${req}`;
-                              return team.name ? String(team.name) : "Team";
-                            })()
-                          : "Solo"}
-                      </td>
+                      <td>{pay ? String(pay.status) : r.payment_status ? String(r.payment_status) : "—"}</td>
+                      <td>{rosterLabel}</td>
                       <td style={{ display: "flex", gap: 8 }}>
                         {hasPermission("registration-edit") && (
                           <button
