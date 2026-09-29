@@ -10,6 +10,9 @@ import DetailFormSkeleton from "@/components/ui/DetailFormSkeleton";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import DeleteRecordButton from "@/components/records/DeleteRecordButton";
 import EventFormFields from "@/components/events/EventFormFields";
+import EventCoordinatorsEditor from "@/components/events/EventCoordinatorsEditor";
+import EventContentSectionsEditor from "@/components/events/EventContentSectionsEditor";
+import RegistrationFieldsEditor from "@/components/events/RegistrationFieldsEditor";
 import { deleteEvent } from "@/lib/api/records";
 import {
   closeRegistration,
@@ -189,6 +192,11 @@ export default function EventDetailPage() {
             </div>
             <form onSubmit={saveAll} style={{ maxWidth: 720 }}>
               <EventFormFields form={form} onChange={setForm} disabled={!canManage || busy} />
+              <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
+                <EventCoordinatorsEditor eventId={id} disabled={!canManage || busy} />
+                <EventContentSectionsEditor eventId={id} disabled={!canManage || busy} />
+                <RegistrationFieldsEditor eventId={id} disabled={!canManage || busy} />
+              </div>
               {canManage && (
                 <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
                   <button type="submit" className="btn btn-primary" disabled={busy}>

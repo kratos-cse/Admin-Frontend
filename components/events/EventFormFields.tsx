@@ -254,24 +254,9 @@ export default function EventFormFields({ form, disabled, onChange }: Props) {
             onChange={(e) => set("whatsapp_group_link", e.target.value)}
           />
         </Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field id="coordinator" label="Coordinator">
-            <input
-              id="coordinator"
-              disabled={disabled}
-              value={form.coordinator}
-              onChange={(e) => set("coordinator", e.target.value)}
-            />
-          </Field>
-          <Field id="coord_contact" label="Coordinator contact">
-            <input
-              id="coord_contact"
-              disabled={disabled}
-              value={form.coord_contact}
-              onChange={(e) => set("coord_contact", e.target.value)}
-            />
-          </Field>
-        </div>
+        <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
+          Coordinators are managed in the section below — you can add as many as needed.
+        </p>
       </section>
     </div>
   );
