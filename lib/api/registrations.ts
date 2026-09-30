@@ -1,5 +1,9 @@
 import { apiFetchData } from "./client";
 
+export function getRegistration(registrationId: string) {
+  return apiFetchData(`/admin/registrations/${registrationId}`, { auth: true });
+}
+
 export function listRegistrations(params?: {
   event_id?: string;
   status?: string;

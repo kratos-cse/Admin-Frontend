@@ -8,12 +8,13 @@ type ConfirmAction = "publish" | "unpublish" | "open-registration" | "close-regi
 
 type Props = {
   event: AdminEvent;
-  canManage: boolean;
+  /** Lifecycle controls (publish, open/close registration). */
+  canControl: boolean;
   busy?: boolean;
   onAction: (action: ConfirmAction) => void;
 };
 
-export default function EventControlPanel({ event, canManage, busy, onAction }: Props) {
+export default function EventControlPanel({ event, canControl, busy, onAction }: Props) {
   const summary = event.config_summary;
 
   return (
@@ -52,7 +53,7 @@ export default function EventControlPanel({ event, canManage, busy, onAction }: 
           </>
         ) : null}
       </div>
-      {canManage ? (
+      {canControl ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
           {event.visibility !== "PUBLISHED" ? (
             <button type="button" className={styles.btnPrimary} disabled={busy} onClick={() => onAction("publish")}>

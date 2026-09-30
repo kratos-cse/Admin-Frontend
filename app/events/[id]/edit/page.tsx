@@ -32,6 +32,7 @@ import {
 import { ApiError } from "@/lib/api/client";
 import { formatAdminError } from "@/lib/errors/adminMessages";
 import { useAuth } from "@/context/AuthProvider";
+import { canControlEvents, canEditEvents } from "@/lib/permissions";
 import {
   EDITOR_STEPS,
   parseStepParam,
@@ -57,8 +58,9 @@ export default function EventEditPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = String(params?.id || "");
-  const { hasPermission } = useAuth();
-  const canManage = hasPermission("event-management");
+  const { hasPermission, isSuperAdmin } = useAuth();
+  const canManage = canEditEvents(hasPermission);
+  const canControl = canControlEvents(hasPermission, isSuperAdmin);
 
   const currentStep = parseStepParam(searchParams.get("step"));
 
@@ -243,7 +245,7 @@ export default function EventEditPage() {
                     </button>
                   ) : null}
                 </div>
-                {canManage && currentStep === "review" ? (
+                {canControl && currentStep === "review" ? (
                   <div style={{ display: "flex", gap: 8 }}>
                     {event.visibility !== "PUBLISHED" ? (
                       <button type="button" className={editorStyles.btnPrimary} disabled={busy} onClick={() => setConfirm("publish")}>Publish event</button>

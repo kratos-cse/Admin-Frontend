@@ -58,3 +58,7 @@ export function closeRegistration(eventId: string) {
     auth: true,
   });
 }
+
+export function getEventMetrics(eventId: string) {
+  return apiFetchData(`/admin/events/${eventId}/metrics`, { auth: true });
+}

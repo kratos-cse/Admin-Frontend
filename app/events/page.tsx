@@ -16,14 +16,16 @@ import {
 } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
+import { canControlEvents, canEditEvents } from "@/lib/permissions";
 import { registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
 import { rosterSummary, type EventListItem } from "@/types/events";
 
 type ConfirmAction = "publish" | "unpublish" | "open-registration" | "close-registration";
 
 export default function EventsPage() {
-  const { hasPermission } = useAuth();
-  const canManage = hasPermission("event-management");
+  const { hasPermission, isSuperAdmin } = useAuth();
+  const canEdit = canEditEvents(hasPermission);
+  const canControl = canControlEvents(hasPermission, isSuperAdmin);
   const [items, setItems] = useState<EventListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +109,7 @@ export default function EventsPage() {
           title="Events"
           description="Create events, publish to the website, then open registration when ready."
           actions={
-            canManage ? (
+            canEdit ? (
               <Link href="/events/new" className="btn btn-primary">
                 Create event
               </Link>
@@ -162,7 +164,7 @@ export default function EventsPage() {
                       <Link href={`/events/${ev.id}/preview`} className="btn btn-ghost">
                         Preview
                       </Link>
-                      {canManage && ev.visibility !== "PUBLISHED" && (
+                      {canControl && ev.visibility !== "PUBLISHED" && (
                         <button
                           type="button"
                           className="btn btn-ghost"
@@ -171,7 +173,7 @@ export default function EventsPage() {
                           Publish
                         </button>
                       )}
-                      {canManage && ev.visibility === "PUBLISHED" && (
+                      {canControl && ev.visibility === "PUBLISHED" && (
                         <button
                           type="button"
                           className="btn btn-ghost"
@@ -180,7 +182,7 @@ export default function EventsPage() {
                           Unpublish
                         </button>
                       )}
-                      {canManage && ev.visibility === "PUBLISHED" && ev.registration_status !== "OPEN" && (
+                      {canControl && ev.visibility === "PUBLISHED" && ev.registration_status !== "OPEN" && (
                         <button
                           type="button"
                           className="btn btn-ghost"
@@ -189,7 +191,7 @@ export default function EventsPage() {
                           Open registration
                         </button>
                       )}
-                      {canManage && ev.registration_status === "OPEN" && (
+                      {canControl && ev.registration_status === "OPEN" && (
                         <button
                           type="button"
                           className="btn btn-ghost"

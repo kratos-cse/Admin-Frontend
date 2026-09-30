@@ -4,15 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthProvider";
+import { canReadEvents } from "@/lib/permissions";
 import styles from "./AdminShell.module.css";
 
-type NavItem = { href: string; label: string; permission?: string; superOnly?: boolean };
+type NavItem = {
+  href: string;
+  label: string;
+  permission?: string;
+  superOnly?: boolean;
+  visible?: (ctx: { hasPermission: (k: string) => boolean; isSuperAdmin: boolean }) => boolean;
+};
 
 const NAV: NavItem[] = [
-  { href: "/", label: "Dashboard" },
+  { href: "/", label: "Dashboard", permission: "dashboard" },
   { href: "/participants", label: "Participants", permission: "participant-read" },
   { href: "/registrations", label: "Registrations", permission: "registration-read" },
-  { href: "/events", label: "Events", permission: "event-management" },
+  {
+    href: "/events",
+    label: "Events",
+    visible: ({ hasPermission }) => canReadEvents(hasPermission),
+  },
   { href: "/teams", label: "Teams", permission: "team-read" },
   { href: "/payments", label: "Payments", permission: "payment-read" },
   { href: "/notifications", label: "Notifications", permission: "announcement" },
@@ -31,6 +42,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     () =>
       NAV.filter((item) => {
         if (item.superOnly) return isSuperAdmin;
+        if (item.visible) return item.visible({ hasPermission, isSuperAdmin });
         if (!item.permission) return true;
         if (item.href === "/notifications") {
           return (
@@ -38,6 +50,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             hasPermission("reminder") ||
             hasPermission("notification")
           );
+        }
+        if (item.href === "/") {
+          return hasPermission("dashboard") || isSuperAdmin;
         }
         return hasPermission(item.permission);
       }),

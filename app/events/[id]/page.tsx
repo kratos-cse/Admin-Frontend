@@ -11,10 +11,15 @@ import DetailFormSkeleton from "@/components/ui/DetailFormSkeleton";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import DeleteRecordButton from "@/components/records/DeleteRecordButton";
 import EventControlPanel from "@/components/events/editor/EventControlPanel";
+import EventMetricsRow from "@/components/events/EventMetricsRow";
+import EventAssignmentsPanel from "@/components/events/EventAssignmentsPanel";
 import { deleteEvent } from "@/lib/api/records";
+import { listRegistrations } from "@/lib/api/registrations";
+import { listTeams } from "@/lib/api/teams";
 import {
   closeRegistration,
   getAdminEvent,
+  getEventMetrics,
   openRegistration,
   publishEvent,
   unpublishEvent,
@@ -24,6 +29,15 @@ import { formatAdminError } from "@/lib/errors/adminMessages";
 import { useAuth } from "@/context/AuthProvider";
 import { formFromAdminEvent, rosterPreview } from "@/lib/events/formState";
 import { registrationAvailabilityLabel, registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
+import {
+  canControlEvents,
+  canEditEvents,
+  canManageAssignments,
+  canReadEvents,
+  formatStatus,
+  isEventCoordinatorRole,
+} from "@/lib/permissions";
+import type { EventMetrics } from "@/types/api";
 import type { AdminEvent } from "@/types/events";
 import editorStyles from "@/components/events/editor/editor.module.css";
 
@@ -33,9 +47,16 @@ export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = String(params?.id || "");
-  const { hasPermission } = useAuth();
-  const canManage = hasPermission("event-management");
+  const { hasPermission, isSuperAdmin, admin } = useAuth();
+  const readOnly = isEventCoordinatorRole(admin?.role?.name) && !canEditEvents(hasPermission);
+  const canEdit = canEditEvents(hasPermission) && !readOnly;
+  const canControl = canControlEvents(hasPermission, isSuperAdmin);
+  const canAssign = canManageAssignments(hasPermission, isSuperAdmin);
+
   const [event, setEvent] = useState<AdminEvent | null>(null);
+  const [metrics, setMetrics] = useState<EventMetrics | null>(null);
+  const [registrations, setRegistrations] = useState<Record<string, unknown>[]>([]);
+  const [teams, setTeams] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -43,10 +64,24 @@ export default function EventDetailPage() {
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
 
   async function load() {
+    if (!canReadEvents(hasPermission) && !isSuperAdmin) {
+      setError("You do not have permission to view this event.");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      setEvent(await getAdminEvent(id));
+      const [ev, m, regs, teamList] = await Promise.all([
+        getAdminEvent(id),
+        getEventMetrics(id) as Promise<EventMetrics>,
+        listRegistrations({ event_id: id, limit: 15 }) as Promise<{ items?: unknown[] }>,
+        listTeams({ event_id: id, limit: 15 }) as Promise<{ items?: unknown[] }>,
+      ]);
+      setEvent(ev);
+      setMetrics(m);
+      setRegistrations((regs.items || []) as Record<string, unknown>[]);
+      setTeams((teamList.items || []) as Record<string, unknown>[]);
     } catch (err) {
       setError(err instanceof ApiError ? formatAdminError(err.message) : "Failed to load");
     } finally {
@@ -97,25 +132,31 @@ export default function EventDetailPage() {
     <RequireAdmin>
       <AdminShell>
         <PageHeader
-          eyebrow="Event hub"
+          eyebrow="Event workspace"
           title={event?.name || "Event"}
           description={formPreview ? rosterPreview(formPreview) : undefined}
           actions={
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <Link href="/events" className="btn btn-ghost">← Events</Link>
-              <Link href={`/events/${id}/edit`} className="btn btn-primary">Edit event</Link>
+              {canEdit ? <Link href={`/events/${id}/edit`} className="btn btn-primary">Edit event</Link> : null}
               <Link href={`/events/${id}/preview`} className="btn btn-ghost">Preview</Link>
             </div>
           }
         />
+        {readOnly ? (
+          <p className="muted" style={{ marginBottom: 12 }}>
+            Read-only access — you can view registrations and teams for assigned events.
+          </p>
+        ) : null}
         {error && <p className="state-error" role="alert">{error}</p>}
         {msg && <p className="muted">{msg}</p>}
         {loading ? <DetailFormSkeleton fields={6} label="Loading event" /> : null}
         {!loading && event && (
           <>
+            <EventMetricsRow metrics={metrics} />
             <EventControlPanel
               event={event}
-              canManage={canManage}
+              canControl={canControl}
               busy={busy}
               onAction={(action) => setConfirm(action)}
             />
@@ -123,8 +164,11 @@ export default function EventDetailPage() {
               <Tabs.List style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
                 <Tabs.Trigger value="overview" className={editorStyles.btnGhost}>Overview</Tabs.Trigger>
                 <Tabs.Trigger value="registrations" className={editorStyles.btnGhost}>Registrations</Tabs.Trigger>
-                <Tabs.Trigger value="exports" className={editorStyles.btnGhost}>Exports</Tabs.Trigger>
+                <Tabs.Trigger value="teams" className={editorStyles.btnGhost}>Teams</Tabs.Trigger>
+                <Tabs.Trigger value="configuration" className={editorStyles.btnGhost}>Configuration</Tabs.Trigger>
+                {canAssign ? <Tabs.Trigger value="assignments" className={editorStyles.btnGhost}>Coordinators</Tabs.Trigger> : null}
               </Tabs.List>
+
               <Tabs.Content value="overview" className={editorStyles.panel}>
                 <h3 style={{ marginTop: 0 }}>Summary</h3>
                 <div className={editorStyles.summaryGrid}>
@@ -150,22 +194,110 @@ export default function EventDetailPage() {
                     <span>{event.fee != null ? `₹${event.fee}` : "Free"}</span>
                   </div>
                 </div>
-                <p className={editorStyles.hint} style={{ marginTop: 12 }}>
-                  Use the step-by-step editor to configure content, coordinators, and the registration form.
-                </p>
               </Tabs.Content>
+
               <Tabs.Content value="registrations" className={editorStyles.panel}>
-                <p className={editorStyles.hint}>
-                  <Link href={`/registrations?event_id=${id}`}>View registrations for this event →</Link>
-                </p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h3 style={{ margin: 0 }}>Recent registrations</h3>
+                  <Link href={`/registrations?event_id=${id}`} className="btn btn-ghost">View all →</Link>
+                </div>
+                {registrations.length === 0 ? (
+                  <p className="muted">No registrations for this event yet.</p>
+                ) : (
+                  <div className="table-wrap">
+                    <table className="data">
+                      <thead>
+                        <tr>
+                          <th>Participant</th>
+                          <th>Type</th>
+                          <th>Status</th>
+                          <th />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {registrations.map((r) => (
+                          <tr key={String(r.id)}>
+                            <td>
+                              {String((r.participant as Record<string, unknown>)?.full_name || r.participant_name || "—")}
+                            </td>
+                            <td>{formatStatus(r.registration_type)}</td>
+                            <td><span className="pill">{formatStatus(r.status)}</span></td>
+                            <td>
+                              <Link href={`/registrations/${String(r.id)}`}>Open</Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </Tabs.Content>
-              <Tabs.Content value="exports" className={editorStyles.panel}>
-                <p className={editorStyles.hint}>
-                  <Link href="/exports">Go to exports →</Link> (filter by event when downloading)
-                </p>
+
+              <Tabs.Content value="teams" className={editorStyles.panel}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h3 style={{ margin: 0 }}>Teams</h3>
+                  <Link href={`/teams?event_id=${id}`} className="btn btn-ghost">View all →</Link>
+                </div>
+                {teams.length === 0 ? (
+                  <p className="muted">No teams for this event yet.</p>
+                ) : (
+                  <div className="table-wrap">
+                    <table className="data">
+                      <thead>
+                        <tr>
+                          <th>Team</th>
+                          <th>Status</th>
+                          <th>Roster</th>
+                          <th />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {teams.map((t) => (
+                          <tr key={String(t.id)}>
+                            <td>{String(t.name || "—")}</td>
+                            <td><span className="pill">{formatStatus(t.status)}</span></td>
+                            <td>
+                              {t.mandatory_filled != null && t.required_member_count != null
+                                ? `${t.mandatory_filled}/${t.required_member_count}`
+                                : "—"}
+                            </td>
+                            <td>
+                              <Link href={`/teams/${String(t.id)}`}>Open</Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </Tabs.Content>
+
+              <Tabs.Content value="configuration" className={editorStyles.panel}>
+                <h3 style={{ marginTop: 0 }}>Configuration</h3>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {canEdit ? (
+                    <>
+                      <li><Link href={`/events/${id}/edit?step=form`}>Registration form</Link></li>
+                      <li><Link href={`/events/${id}/edit?step=content`}>Content sections</Link></li>
+                      <li><Link href={`/events/${id}/edit?step=coordinators`}>Public coordinators</Link></li>
+                    </>
+                  ) : (
+                    <>
+                      <li><Link href={`/events/${id}/preview`}>Preview participant view</Link></li>
+                      <li className="muted">Editing requires event-edit permission.</li>
+                    </>
+                  )}
+                  <li><Link href="/exports">Exports</Link></li>
+                </ul>
+              </Tabs.Content>
+
+              {canAssign ? (
+                <Tabs.Content value="assignments" className={editorStyles.panel}>
+                  <EventAssignmentsPanel eventId={id} canManage={canAssign} />
+                </Tabs.Content>
+              ) : null}
             </Tabs.Root>
-            {canManage && (
+            {canControl && (
               <div style={{ marginTop: 16 }}>
                 <DeleteRecordButton
                   title="Delete event permanently?"

@@ -7,27 +7,30 @@ import RequireAdmin from "@/components/layout/RequireAdmin";
 import PageHeader from "@/components/ui/PageHeader";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { getDashboard } from "@/lib/api/admin";
-import { listRegistrations } from "@/lib/api/registrations";
-import { listPayments } from "@/lib/api/payments";
 import { ApiError } from "@/lib/api/client";
-import { shortId } from "@/lib/permissions";
+import {
+  canReadEvents,
+  formatStatus,
+  isEventCoordinatorRole,
+  shortId,
+} from "@/lib/permissions";
 import type { DashboardData } from "@/types/api";
 import { useAuth } from "@/context/AuthProvider";
 import styles from "./dashboard.module.css";
-
-function asRecord(v: unknown): Record<string, unknown> {
-  return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
-}
 
 function sumMap(map?: Record<string, number>) {
   return Object.values(map || {}).reduce((a, b) => a + Number(b || 0), 0);
 }
 
+function formatPaise(paise?: number) {
+  if (paise == null || !Number.isFinite(paise)) return "—";
+  return `₹${(paise / 100).toFixed(2)}`;
+}
+
 export default function DashboardPage() {
-  const { admin, hasPermission } = useAuth();
+  const { admin, hasPermission, isSuperAdmin } = useAuth();
+  const coordinator = isEventCoordinatorRole(admin?.role?.name);
   const [data, setData] = useState<DashboardData | null>(null);
-  const [regs, setRegs] = useState<unknown[]>([]);
-  const [pays, setPays] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,17 +40,8 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const [dash, regList, payList] = await Promise.all([
-          getDashboard(),
-          listRegistrations({ skip: 0, limit: 8 }),
-          listPayments({ skip: 0, limit: 8 }),
-        ]);
-        if (cancelled) return;
-        setData(dash);
-        const r = asRecord(regList);
-        const p = asRecord(payList);
-        setRegs(Array.isArray(r.items) ? r.items : Array.isArray(regList) ? (regList as unknown[]) : []);
-        setPays(Array.isArray(p.items) ? p.items : Array.isArray(payList) ? (payList as unknown[]) : []);
+        const dash = await getDashboard();
+        if (!cancelled) setData(dash);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof ApiError ? err.message : "Failed to load dashboard");
@@ -64,6 +58,9 @@ export default function DashboardPage() {
   const regTotal = useMemo(() => sumMap(data?.registrations_by_status), [data]);
   const payTotal = useMemo(() => sumMap(data?.payments_by_status), [data]);
   const teamTotal = useMemo(() => sumMap(data?.teams_by_status), [data]);
+  const eventOps = data?.event_operations || [];
+  const recentRegs = data?.recent_registrations || [];
+  const recentPays = data?.recent_payments || [];
 
   return (
     <RequireAdmin>
@@ -71,21 +68,25 @@ export default function DashboardPage() {
         <div className={styles.atmosphere}>
           <PageHeader
             eyebrow="Operations"
-            title="Dashboard"
-            description={`Live KRATOS aggregates${admin?.role?.name ? ` · ${admin.role.name}` : ""}.`}
+            title={coordinator ? "My events" : "Dashboard"}
+            description={
+              coordinator
+                ? "Read-only overview for your assigned events."
+                : `Live KRATOS aggregates${admin?.role?.name ? ` · ${admin.role.name}` : ""}.`
+            }
             actions={
-              <Link href="/exports" className="btn btn-ghost">
-                Exports
-              </Link>
+              canReadEvents(hasPermission) || isSuperAdmin ? (
+                <Link href="/events" className="btn btn-ghost">Events</Link>
+              ) : undefined
             }
           />
 
           <div className={styles.quick}>
-            {hasPermission("participant-read") && <Link href="/participants">Participants</Link>}
             {hasPermission("registration-read") && <Link href="/registrations">Registrations</Link>}
-            {hasPermission("event-management") && <Link href="/events">Events</Link>}
+            {hasPermission("team-read") && <Link href="/teams">Teams</Link>}
+            {hasPermission("participant-read") && <Link href="/participants">Participants</Link>}
             {hasPermission("payment-read") && <Link href="/payments">Payments</Link>}
-            {hasPermission("attendance-read") && <Link href="/attendance">Attendance</Link>}
+            {hasPermission("export") && <Link href="/exports">Exports</Link>}
           </div>
 
           {loading && (
@@ -111,22 +112,69 @@ export default function DashboardPage() {
                 <div className={`card ${styles.kpi}`}>
                   <span className={styles.value}>{data.events_total ?? "—"}</span>
                   <span className={styles.label}>Events</span>
+                  {!coordinator && data.active_events != null ? (
+                    <span className={styles.hint}>{data.active_events} published</span>
+                  ) : null}
                 </div>
                 <div className={`card ${styles.kpi}`}>
                   <span className={styles.value}>{regTotal}</span>
                   <span className={styles.label}>Registrations</span>
-                  <span className={styles.hint}>{Object.keys(data.registrations_by_status || {}).length} statuses</span>
                 </div>
                 <div className={`card ${styles.kpi}`}>
-                  <span className={styles.value}>{payTotal}</span>
-                  <span className={styles.label}>Payments</span>
+                  <span className={styles.value}>{teamTotal}</span>
+                  <span className={styles.label}>Teams</span>
                 </div>
                 <div className={`card ${styles.kpi}`}>
-                  <span className={styles.value}>{data.attendance_scans_total ?? "—"}</span>
-                  <span className={styles.label}>Attendance scans</span>
-                  <span className={styles.hint}>{teamTotal} teams tracked</span>
+                  <span className={styles.value}>{formatPaise(data.paid_revenue_paise)}</span>
+                  <span className={styles.label}>Paid revenue</span>
+                  <span className={styles.hint}>{payTotal} payments tracked</span>
                 </div>
               </div>
+
+              {eventOps.length > 0 ? (
+                <div className={`card ${styles.recent}`} style={{ marginBottom: 16 }}>
+                  <div className={styles.recentHead}>
+                    <h3>Event operations</h3>
+                  </div>
+                  <div className="table-wrap">
+                    <table className="data">
+                      <thead>
+                        <tr>
+                          <th>Event</th>
+                          <th>Regs</th>
+                          <th>Teams</th>
+                          <th>Capacity</th>
+                          <th />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {eventOps.map((row) => (
+                          <tr key={row.event_id}>
+                            <td>
+                              <Link href={`/events/${row.event_id}`}>{row.event_name}</Link>
+                              <div className="muted" style={{ fontSize: "0.8rem" }}>
+                                {formatStatus(row.registration_status)} · {formatStatus(row.visibility)}
+                              </div>
+                            </td>
+                            <td>{row.registrations_confirmed ?? 0} confirmed · {row.registrations_pending ?? 0} pending</td>
+                            <td>{row.teams_complete ?? 0} complete · {row.teams_forming ?? 0} forming</td>
+                            <td>
+                              {row.capacity != null
+                                ? `${row.capacity_used ?? 0}/${row.capacity}`
+                                : "—"}
+                            </td>
+                            <td>
+                              <Link href={`/registrations?event_id=${row.event_id}`}>Regs</Link>
+                              {" · "}
+                              <Link href={`/teams?event_id=${row.event_id}`}>Teams</Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
 
               <div className={styles.panels}>
                 <StatusPanel title="Registrations" map={data.registrations_by_status} total={regTotal} />
@@ -138,31 +186,23 @@ export default function DashboardPage() {
                 <RecentList
                   title="Recent registrations"
                   href="/registrations"
-                  rows={regs}
-                  render={(row) => {
-                    const r = asRecord(row);
-                    return {
-                      primary: String(r.status ?? "Registration"),
-                      secondary: `ID ${shortId(r.id)} · event ${shortId(r.event_id)}`,
-                      status: r.status,
-                    };
-                  }}
+                  rows={recentRegs}
+                  render={(row) => ({
+                    primary: String(row.participant_name || row.event_name || "Registration"),
+                    secondary: `${formatStatus(row.status)} · ${row.event_name || shortId(row.event_id)}`,
+                    status: row.status,
+                    href: row.id ? `/registrations/${row.id}` : undefined,
+                  })}
                 />
                 <RecentList
                   title="Recent payments"
                   href="/payments"
-                  rows={pays}
-                  render={(row) => {
-                    const r = asRecord(row);
-                    const paise = Number(r.amount_paise);
-                    const amount =
-                      Number.isFinite(paise) ? `₹${(paise / 100).toFixed(2)}` : String(r.amount ?? "—");
-                    return {
-                      primary: amount,
-                      secondary: `ID ${shortId(r.id)} · order ${shortId(r.order_id || r.razorpay_order_id)}`,
-                      status: r.status,
-                    };
-                  }}
+                  rows={recentPays}
+                  render={(row) => ({
+                    primary: formatPaise(Number(row.amount_paise)),
+                    secondary: `${row.event_name || "Payment"} · ${row.participant_name || shortId(row.id)}`,
+                    status: row.status,
+                  })}
                 />
               </div>
             </>
@@ -220,7 +260,12 @@ function RecentList({
   title: string;
   href: string;
   rows: unknown[];
-  render: (row: unknown) => { primary: string; secondary: string; status: unknown };
+  render: (row: Record<string, unknown>) => {
+    primary: string;
+    secondary: string;
+    status: unknown;
+    href?: string;
+  };
 }) {
   return (
     <div className={`card ${styles.recent}`}>
@@ -231,15 +276,20 @@ function RecentList({
         </Link>
       </div>
       {rows.length === 0 ? (
-        <p className={styles.empty}>Nothing recent from the API</p>
+        <p className={styles.empty}>Nothing recent</p>
       ) : (
         <ul className={styles.list}>
           {rows.map((row, i) => {
-            const item = render(row);
-            const id = String(asRecord(row).id || i);
+            const r = row as Record<string, unknown>;
+            const item = render(r);
+            const id = String(r.id || i);
             return (
               <li key={id} className={styles.listItem}>
-                <span className={styles.listPrimary}>{item.primary}</span>
+                {item.href ? (
+                  <Link href={item.href} className={styles.listPrimary}>{item.primary}</Link>
+                ) : (
+                  <span className={styles.listPrimary}>{item.primary}</span>
+                )}
                 <StatusBadge status={item.status} />
                 <span className={styles.listSecondary}>{item.secondary}</span>
               </li>
