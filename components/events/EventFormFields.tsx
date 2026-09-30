@@ -5,7 +5,6 @@ import {
   CATEGORIES,
   MEMBER_MODES,
   REGISTRATION_MODES,
-  SLOTS,
   isTeamMode,
   rosterPreview,
   type EventFormState,
@@ -81,28 +80,16 @@ export default function EventFormFields({ form, disabled, onChange }: Props) {
             onChange={(e) => set("long_desc", e.target.value)}
           />
         </Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field id="category" label="Category">
-            <select id="category" disabled={disabled} value={form.category} onChange={(e) => set("category", e.target.value)}>
-              <option value="">Select…</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field id="slot" label="Slot">
-            <select id="slot" disabled={disabled} value={form.slot} onChange={(e) => set("slot", e.target.value)}>
-              <option value="">Select…</option>
-              {SLOTS.map((s) => (
-                <option key={s} value={s}>
-                  {s.replace(/_/g, " ")}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+        <Field id="category" label="Category">
+          <select id="category" disabled={disabled} value={form.category} onChange={(e) => set("category", e.target.value)}>
+            <option value="">Select…</option>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Field id="starts_at" label="Starts at">
             <input

@@ -23,7 +23,7 @@ export default function NewEventPage() {
     setError(null);
     try {
       const created = await createEvent(toCreateBody(form));
-      router.push(created?.id ? `/events/${created.id}` : "/events");
+      router.push(created?.id ? `/events/${created.id}/edit?step=schedule` : "/events");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Create failed");
     } finally {

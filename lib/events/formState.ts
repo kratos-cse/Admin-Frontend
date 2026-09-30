@@ -3,10 +3,10 @@ import type {
   AdminEventCreateBody,
   CapacityType,
   EventCategory,
-  EventSlot,
   MemberRegistrationMode,
   RegistrationMode,
 } from "@/types/events";
+import { deriveSlotFromSchedule } from "./deriveSlot";
 
 export const CATEGORIES: EventCategory[] = [
   "TECHNICAL",
@@ -15,8 +15,6 @@ export const CATEGORIES: EventCategory[] = [
   "ONLINE",
   "CULTURAL",
 ];
-
-export const SLOTS: EventSlot[] = ["MORNING", "AFTERNOON", "EVENING", "FULL_DAY", "MULTI_DAY"];
 
 export const REGISTRATION_MODES: { value: RegistrationMode; label: string }[] = [
   { value: "INDIVIDUAL_ONLY", label: "Individuals only" },
@@ -40,15 +38,12 @@ export type EventFormState = {
   short_desc: string;
   long_desc: string;
   category: string;
-  coordinator: string;
-  coord_contact: string;
   fee: string;
   venue: string;
   capacity: string;
   whatsapp_group_link: string;
   starts_at: string;
   ends_at: string;
-  slot: string;
   registration_mode: RegistrationMode;
   required_member_count: string;
   substitute_count: string;
@@ -65,15 +60,12 @@ export function emptyEventForm(): EventFormState {
     short_desc: "",
     long_desc: "",
     category: "",
-    coordinator: "",
-    coord_contact: "",
     fee: "",
     venue: "",
     capacity: "",
     whatsapp_group_link: "",
     starts_at: "",
     ends_at: "",
-    slot: "",
     registration_mode: "TEAM_ONLY",
     required_member_count: "5",
     substitute_count: "2",
@@ -107,15 +99,12 @@ export function formFromAdminEvent(ev: AdminEvent): EventFormState {
     short_desc: ev.short_desc || "",
     long_desc: ev.long_desc || "",
     category: ev.category || "",
-    coordinator: ev.coordinator || "",
-    coord_contact: ev.coord_contact || "",
     fee: ev.fee != null ? String(ev.fee) : "",
     venue: ev.venue || "",
     capacity: ev.capacity != null ? String(ev.capacity) : "",
     whatsapp_group_link: ev.whatsapp_group_link || "",
     starts_at: toLocalInput(ev.starts_at),
     ends_at: toLocalInput(ev.ends_at),
-    slot: ev.slot || "",
     registration_mode: r?.registration_mode || "TEAM_OR_INDIVIDUAL",
     required_member_count: String(r?.required_member_count ?? r?.team_min_size ?? 1),
     substitute_count: String(r?.substitute_count ?? Math.max(0, (r?.team_max_size ?? 1) - (r?.team_min_size ?? 1))),
@@ -148,15 +137,13 @@ export function toCreateBody(form: EventFormState): AdminEventCreateBody {
     short_desc: form.short_desc.trim() || null,
     long_desc: form.long_desc.trim() || null,
     category: (form.category || null) as EventCategory | null,
-    coordinator: form.coordinator.trim() || null,
-    coord_contact: form.coord_contact.trim() || null,
     fee: form.fee === "" ? null : Number(form.fee),
     venue: form.venue.trim() || null,
     capacity: form.capacity === "" ? null : Number(form.capacity),
     whatsapp_group_link: form.whatsapp_group_link.trim() || null,
     starts_at: fromLocalInput(form.starts_at),
     ends_at: fromLocalInput(form.ends_at),
-    slot: (form.slot || null) as EventSlot | null,
+    slot: deriveSlotFromSchedule(fromLocalInput(form.starts_at), fromLocalInput(form.ends_at)),
     registration_mode: form.registration_mode,
     required_member_count: required,
     substitute_count: substitutes,
@@ -176,15 +163,13 @@ export function toDetailsPatch(form: EventFormState) {
     short_desc: form.short_desc.trim() || null,
     long_desc: form.long_desc.trim() || null,
     category: (form.category || null) as EventCategory | null,
-    coordinator: form.coordinator.trim() || null,
-    coord_contact: form.coord_contact.trim() || null,
     fee: form.fee === "" ? null : Number(form.fee),
     venue: form.venue.trim() || null,
     capacity: form.capacity === "" ? null : Number(form.capacity),
     whatsapp_group_link: form.whatsapp_group_link.trim() || null,
     starts_at: fromLocalInput(form.starts_at),
     ends_at: fromLocalInput(form.ends_at),
-    slot: (form.slot || null) as EventSlot | null,
+    slot: deriveSlotFromSchedule(fromLocalInput(form.starts_at), fromLocalInput(form.ends_at)),
   };
 }
 

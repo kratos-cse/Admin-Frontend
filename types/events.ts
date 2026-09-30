@@ -23,6 +23,13 @@ export interface EventRules {
   custom_fields: Record<string, unknown> | null;
 }
 
+export interface EventConfigSummary {
+  coordinators_count: number;
+  content_sections_count: number;
+  registration_fields_count: number;
+  team_member_fields_count: number;
+}
+
 export interface AdminEvent {
   id: string;
   name: string;
@@ -47,6 +54,7 @@ export interface AdminEvent {
   registration_open?: boolean;
   registration_availability?: RegistrationAvailability;
   spots_remaining?: number | null;
+  config_summary?: EventConfigSummary;
   rules: EventRules;
 }
 
