@@ -13,8 +13,22 @@ export const CATEGORIES: EventCategory[] = [
   "PLAYGROUND",
   "SPARK",
   "ONLINE",
-  "CULTURAL",
+  "TITLE_EVENT",
 ];
+
+const CATEGORY_LABELS: Record<EventCategory, string> = {
+  TECHNICAL: "Technical",
+  PLAYGROUND: "Playground",
+  SPARK: "Spark",
+  ONLINE: "Online",
+  TITLE_EVENT: "Title Event",
+};
+
+export function categoryLabel(category: string | null | undefined): string {
+  if (!category) return "—";
+  const key = category === "CULTURAL" ? "TITLE_EVENT" : category;
+  return CATEGORY_LABELS[key as EventCategory] ?? category;
+}
 
 export const REGISTRATION_MODES: { value: RegistrationMode; label: string }[] = [
   { value: "INDIVIDUAL_ONLY", label: "Individuals only" },

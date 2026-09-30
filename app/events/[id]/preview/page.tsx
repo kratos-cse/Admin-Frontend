@@ -10,7 +10,7 @@ import { registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
 import { getAdminEvent } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
 import { rosterSummary, type AdminEvent } from "@/types/events";
-import { REGISTRATION_MODES, MEMBER_MODES } from "@/lib/events/formState";
+import { REGISTRATION_MODES, MEMBER_MODES, categoryLabel } from "@/lib/events/formState";
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -72,7 +72,7 @@ export default function EventPreviewPage() {
             <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
               <span className="pill">{visibilityLabel(event.visibility).toUpperCase()}</span>
               <span className="pill">{registrationStatusLabel(event.registration_status).toUpperCase()}</span>
-              {event.category && <span className="pill">{event.category}</span>}
+              {event.category && <span className="pill">{categoryLabel(event.category)}</span>}
             </div>
             {event.tagline && <p style={{ fontSize: "1.1rem", marginTop: 0 }}>{event.tagline}</p>}
             <p className="muted">{event.short_desc || "No short description."}</p>

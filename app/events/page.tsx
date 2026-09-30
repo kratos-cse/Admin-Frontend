@@ -18,6 +18,7 @@ import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
 import { canControlEvents, canEditEvents } from "@/lib/permissions";
 import { registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
+import { categoryLabel } from "@/lib/events/formState";
 import { rosterSummary, type EventListItem } from "@/types/events";
 
 type ConfirmAction = "publish" | "unpublish" | "open-registration" | "close-registration";
@@ -145,7 +146,7 @@ export default function EventsPage() {
                     <td>
                       <Link href={`/events/${ev.id}`}>{ev.name}</Link>
                     </td>
-                    <td>{ev.category ?? "—"}</td>
+                    <td>{categoryLabel(ev.category)}</td>
                     <td>
                       {rosterSummary(
                         ev.required_member_count,

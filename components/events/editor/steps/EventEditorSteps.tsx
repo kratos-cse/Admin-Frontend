@@ -5,6 +5,7 @@ import {
   CATEGORIES,
   MEMBER_MODES,
   REGISTRATION_MODES,
+  categoryLabel,
   isTeamMode,
   rosterPreview,
   type EventFormState,
@@ -62,7 +63,7 @@ export function BasicInfoStep({ form, disabled, onChange }: StepProps) {
         <select id="category" disabled={disabled} value={form.category} onChange={(e) => set("category", e.target.value)}>
           <option value="">Select…</option>
           {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c} value={c}>{categoryLabel(c)}</option>
           ))}
         </select>
       </Field>
@@ -212,7 +213,7 @@ export function ReviewPublishStep({ form, event }: ReviewProps) {
       <h3>Review</h3>
       <div className={styles.summaryGrid}>
         <div className={styles.summaryRow}><span className={styles.summaryLabel}>Name</span><span>{form.name || "—"}</span></div>
-        <div className={styles.summaryRow}><span className={styles.summaryLabel}>Category</span><span>{form.category || "—"}</span></div>
+        <div className={styles.summaryRow}><span className={styles.summaryLabel}>Category</span><span>{categoryLabel(form.category)}</span></div>
         <div className={styles.summaryRow}><span className={styles.summaryLabel}>Venue</span><span>{form.venue || "—"}</span></div>
         <div className={styles.summaryRow}><span className={styles.summaryLabel}>Slot (auto)</span><span>{slot.replace(/_/g, " ")}</span></div>
         <div className={styles.summaryRow}><span className={styles.summaryLabel}>Registration</span><span>{rosterPreview(form)}</span></div>

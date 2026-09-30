@@ -5,6 +5,7 @@ import {
   CATEGORIES,
   MEMBER_MODES,
   REGISTRATION_MODES,
+  categoryLabel,
   isTeamMode,
   rosterPreview,
   type EventFormState,
@@ -85,7 +86,7 @@ export default function EventFormFields({ form, disabled, onChange }: Props) {
             <option value="">Select…</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {categoryLabel(c)}
               </option>
             ))}
           </select>
