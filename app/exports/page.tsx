@@ -3,6 +3,7 @@
 import { useState } from "react";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
+import PageHeader from "@/components/ui/PageHeader";
 import { exportAttendance, exportPayments, exportRegistrations } from "@/lib/api/exports";
 import { ApiError } from "@/lib/api/client";
 
@@ -25,10 +26,7 @@ export default function ExportsPage() {
   return (
     <RequireAdmin>
       <AdminShell>
-        <div className="page-title">
-          <h1>Exports</h1>
-          <p className="muted">XLSX downloads from /admin/exports/*</p>
-        </div>
+        <PageHeader eyebrow="Data" title="Exports" description="Download Excel sheets for registrations, payments and attendance." />
         <div className="card" style={{ display: "grid", gap: 12, maxWidth: 420 }}>
           <button
             type="button"

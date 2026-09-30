@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
+import PageHeader from "@/components/ui/PageHeader";
 import { useAuth } from "@/context/AuthProvider";
 
 export default function ProfilePage() {
@@ -12,30 +13,27 @@ export default function ProfilePage() {
   return (
     <RequireAdmin>
       <AdminShell>
-        <div className="page-title">
-          <h1>Profile</h1>
-          <p className="muted">Admin identity from GET /admin/me</p>
-        </div>
-        <div className="card" style={{ maxWidth: 520 }}>
+        <PageHeader eyebrow="Account" title="Profile" description="Your admin identity and granted permissions." />
+        <div className="card" style={{ maxWidth: 560 }}>
           <p>
             <strong>Email</strong>
             <br />
-            <span className="muted">{userEmail || "—"}</span>
+            <span style={{ color: "var(--text-secondary)" }}>{userEmail || "—"}</span>
           </p>
-          <p style={{ marginTop: 12 }}>
+          <p style={{ marginTop: 14 }}>
             <strong>Role</strong>
             <br />
-            <span className="muted">
+            <span style={{ color: "var(--text-secondary)" }}>
               {admin?.role?.name || "—"}
               {isSuperAdmin ? " (Super Admin)" : ""}
             </span>
           </p>
-          <p style={{ marginTop: 12 }}>
+          <p style={{ marginTop: 14 }}>
             <strong>Admin user id</strong>
             <br />
-            <span className="muted">{admin?.admin_user_id}</span>
+            <code style={{ overflowWrap: "anywhere" }}>{admin?.admin_user_id}</code>
           </p>
-          <p style={{ marginTop: 12 }}>
+          <p style={{ marginTop: 14 }}>
             <strong>Permissions</strong>
           </p>
           <ul style={{ listStyle: "none", display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>

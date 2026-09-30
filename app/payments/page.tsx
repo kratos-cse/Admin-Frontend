@@ -5,6 +5,8 @@ import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import DeleteRecordButton from "@/components/records/DeleteRecordButton";
+import StatusBadge from "@/components/ui/StatusBadge";
+import PageHeader from "@/components/ui/PageHeader";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { listPayments, refundPayment } from "@/lib/api/payments";
 import { deletePayment } from "@/lib/api/records";
@@ -46,12 +48,13 @@ export default function PaymentsPage() {
   return (
     <RequireAdmin>
       <AdminShell>
-        <div className="page-title">
-          <h1>Payments</h1>
-          <p className="muted">GET /admin/payments · refund is Super Admin only</p>
-        </div>
+        <PageHeader
+          eyebrow="Operations"
+          title="Payments"
+          description="Track Razorpay orders and payment status. Refunds are limited to Super Admins."
+        />
         <div className="toolbar">
-          <select value={status} onChange={(e) => { setSkip(0); setStatus(e.target.value); }} style={{ padding: 10, background: "var(--char)", border: "1px solid var(--line)" }}>
+          <select value={status} onChange={(e) => { setSkip(0); setStatus(e.target.value); }}>
             <option value="">All statuses</option>
             <option value="CREATED">CREATED</option>
             <option value="PAID">PAID</option>
@@ -88,13 +91,14 @@ export default function PaymentsPage() {
                       {String(p.currency || "")}
                     </td>
                     <td>
-                      <span className="pill">{String(p.status)}</span>
+                      <StatusBadge status={p.status} />
                     </td>
                     <td>{String(p.payment_type ?? "—")}</td>
                     <td>{p.created_at ? new Date(String(p.created_at)).toLocaleString() : "—"}</td>
-                    <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <td>
+                     <div className="row-actions">
                       {isSuperAdmin && String(p.status) === "PAID" && (
-                        <button type="button" className="btn btn-danger" onClick={() => setRefundId(String(p.id))}>
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => setRefundId(String(p.id))}>
                           Refund
                         </button>
                       )}
@@ -104,13 +108,13 @@ export default function PaymentsPage() {
                           message={`Permanently remove payment ${String(p.id).slice(0, 8)}… (${String(p.status)}). This unlinks the payment from any registration and cannot be undone.`}
                           confirmLabel="Delete payment"
                           label="Delete"
-                          className="btn btn-danger"
-                          style={{ padding: "6px 10px" }}
+                          className="btn btn-danger btn-sm"
                           onDelete={() => deletePayment(String(p.id))}
                           onDeleted={() => void load()}
                           onError={(m) => setError(m)}
                         />
                       )}
+                     </div>
                     </td>
                   </tr>
                 ))}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
+import PageHeader from "@/components/ui/PageHeader";
 import { createCheckpoint, listAttendance, listCheckpoints } from "@/lib/api/attendance";
 import { listEvents } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
@@ -50,12 +51,9 @@ export default function AttendancePage() {
   return (
     <RequireAdmin>
       <AdminShell>
-        <div className="page-title">
-          <h1>Attendance</h1>
-          <p className="muted">Scans and checkpoints from existing admin attendance APIs</p>
-        </div>
+        <PageHeader eyebrow="Operations" title="Attendance" description="Checkpoints and scan activity for each event." />
         <div className="toolbar">
-          <select value={eventId} onChange={(e) => setEventId(e.target.value)} style={{ padding: 10, background: "var(--char)", border: "1px solid var(--line)" }}>
+          <select value={eventId} onChange={(e) => setEventId(e.target.value)}>
             <option value="">All events</option>
             {events.map((ev) => (
               <option key={String(ev.id)} value={String(ev.id)}>
@@ -82,7 +80,6 @@ export default function AttendancePage() {
                 placeholder="Checkpoint name"
                 value={cpName}
                 onChange={(e) => setCpName(e.target.value)}
-                style={{ padding: 10, border: "1px solid var(--line)", background: "rgba(255,255,255,.03)", flex: 1 }}
               />
               <button
                 type="button"

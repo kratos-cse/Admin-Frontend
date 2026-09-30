@@ -7,6 +7,7 @@ import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import DeleteRecordButton from "@/components/records/DeleteRecordButton";
+import StatusBadge from "@/components/ui/StatusBadge";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import PageHeader from "@/components/ui/PageHeader";
 import { cancelRegistration, listRegistrations, updateRegistration } from "@/lib/api/registrations";
@@ -156,16 +157,17 @@ function RegistrationsInner() {
                       )}
                     </td>
                     <td>{formatStatus(r.registration_type)}</td>
-                    <td><span className="pill">{formatStatus(r.status)}</span></td>
+                    <td><StatusBadge status={formatStatus(r.status)} /></td>
                     <td>{pay ? String(pay.status) : r.payment_status ? String(r.payment_status) : "—"}</td>
-                    <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <Link href={`/registrations/${String(r.id)}`} className="btn btn-ghost" style={{ padding: "6px 10px" }}>
+                    <td>
+                     <div className="row-actions">
+                      <Link href={`/registrations/${String(r.id)}`} className="btn btn-ghost btn-sm">
                         View
                       </Link>
                       {hasPermission("registration-edit") && (
                         <button
                           type="button"
-                          className="btn btn-ghost"
+                          className="btn btn-ghost btn-sm"
                           onClick={() =>
                             void updateRegistration(String(r.id), { status: "CONFIRMED" }).then(load).catch((e) => setError(e.message))
                           }
@@ -174,7 +176,7 @@ function RegistrationsInner() {
                         </button>
                       )}
                       {isSuperAdmin && (
-                        <button type="button" className="btn btn-ghost" onClick={() => setCancelId(String(r.id))}>
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setCancelId(String(r.id))}>
                           Cancel
                         </button>
                       )}
@@ -183,12 +185,12 @@ function RegistrationsInner() {
                         message={`Hard-delete registration ${shortId(r.id)} and related team data.`}
                         confirmLabel="Delete registration"
                         label="Delete"
-                        className="btn btn-danger"
-                        style={{ padding: "6px 10px" }}
+                        className="btn btn-danger btn-sm"
                         onDelete={() => deleteRegistration(String(r.id))}
                         onDeleted={() => void load()}
                         onError={(m) => setError(m)}
                       />
+                     </div>
                     </td>
                   </tr>
                 );

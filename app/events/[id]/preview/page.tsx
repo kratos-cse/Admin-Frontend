@@ -14,11 +14,11 @@ import { REGISTRATION_MODES, MEMBER_MODES, categoryLabel } from "@/lib/events/fo
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
-      <span className="muted" style={{ fontSize: "0.75rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 16px", padding: "11px 0", borderBottom: "1px solid var(--border)" }}>
+      <span className="muted" style={{ flex: "1 1 150px", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
         {label}
       </span>
-      <span>{value || "—"}</span>
+      <span style={{ flex: "3 1 220px", minWidth: 0, overflowWrap: "anywhere" }}>{value || "—"}</span>
     </div>
   );
 }

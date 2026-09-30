@@ -5,37 +5,36 @@
 
 .gridTwo {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-columns: 1fr;
   gap: 14px;
   align-items: start;
 }
 
 .card {
-  padding: 18px;
+  padding: 16px;
 }
 
 .cardTitle {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
   margin-bottom: 14px;
 }
 
 .cardTitle h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
 }
 
 .cardTitle p {
   margin: 0;
-  color: var(--ash-dim);
-  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
 }
 
 .formRow {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr;
   gap: 10px;
   align-items: end;
 }
@@ -52,7 +51,7 @@
 
 .tableHead {
   padding: 14px 16px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -61,16 +60,16 @@
 
 .tableHead h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
 }
 
 .adminRow {
   display: grid;
-  grid-template-columns: minmax(140px, 1.2fr) minmax(160px, 1fr) auto auto;
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 10px;
   align-items: center;
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(232, 178, 60, 0.08);
+  border-bottom: 1px solid var(--border);
 }
 
 .adminRow:last-child {
@@ -78,17 +77,13 @@
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.78rem;
-  color: var(--ash-dim);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
   word-break: break-all;
 }
 
 .roleSelect {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--line);
-  border-radius: 2px;
-  padding: 8px 10px;
   min-width: 0;
   width: 100%;
 }
@@ -99,17 +94,19 @@
 }
 
 .roleCard {
-  border: 1px solid var(--line);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 14px;
-  background: rgba(255, 255, 255, 0.02);
-  transition: border-color 160ms ease, background 160ms ease;
+  background: var(--bg-surface);
+  transition:
+    border-color var(--duration-ui) var(--ease-out),
+    background-color var(--duration-ui) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .roleCard:hover {
-    border-color: rgba(232, 178, 60, 0.35);
-    background: rgba(232, 178, 60, 0.04);
+    border-color: var(--accent);
+    background: var(--accent-soft);
   }
 }
 
@@ -123,13 +120,13 @@
 
 .roleName {
   margin: 0;
-  font-size: 0.98rem;
+  font-size: 1rem;
 }
 
 .roleDesc {
   margin: 4px 0 0;
-  color: var(--ash-dim);
-  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
 }
 
 .permChips {
@@ -140,56 +137,54 @@
 }
 
 .chip {
-  font-size: 0.65rem;
-  letter-spacing: 0.04em;
-  padding: 3px 7px;
-  border-radius: 2px;
-  border: 1px solid var(--line);
-  color: var(--ash-dim);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
 }
 
 .permGroups {
   display: grid;
   gap: 14px;
   margin: 12px 0 16px;
-  max-height: 280px;
+  max-height: 320px;
   overflow: auto;
   padding-right: 4px;
 }
 
 .group {
-  border-top: 1px solid rgba(232, 178, 60, 0.1);
+  border-top: 1px solid var(--border);
   padding-top: 10px;
 }
 
 .group h4 {
   margin: 0 0 8px;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--gold);
-  font-family: var(--font-rajdhani), sans-serif;
-  font-weight: 600;
+  color: var(--accent-ink);
 }
 
 .checkGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 6px 10px;
+  grid-template-columns: 1fr;
+  gap: 2px 10px;
 }
 
 .check {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.86rem;
-  color: var(--ash);
+  gap: 10px;
+  min-height: 40px;
+  font-size: 0.92rem;
+  color: var(--text);
   cursor: pointer;
   user-select: none;
-}
-
-.check input {
-  accent-color: var(--ember);
 }
 
 .actions {
@@ -200,17 +195,42 @@
 
 .banner {
   padding: 12px 14px;
-  border: 1px solid rgba(232, 178, 60, 0.25);
-  background: rgba(232, 178, 60, 0.07);
-  border-radius: 4px;
-  color: var(--ash);
-  font-size: 0.88rem;
+  border: 1px solid var(--warn-edge);
+  background: var(--warn-bg);
+  border-radius: var(--radius);
+  color: var(--warn);
+  font-size: 0.92rem;
+  font-weight: 500;
 }
 
-@media (max-width: 900px) {
-  .gridTwo,
-  .formRow,
+@media (min-width: 640px) {
+  .checkGrid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .check {
+    min-height: 32px;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr 1fr auto;
+  }
+
+  .cardTitle {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+}
+
+@media (min-width: 900px) {
+  .gridTwo {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  }
+
   .adminRow {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(140px, 1.2fr) minmax(160px, 1fr) auto auto;
+    gap: 12px;
   }
 }

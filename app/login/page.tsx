@@ -36,11 +36,30 @@ function LoginInner() {
   return (
     <div className="login-page">
       <div className="card login-card">
-        <p className="muted" style={{ letterSpacing: "0.18em", textTransform: "uppercase", fontSize: "0.68rem", color: "var(--gold)" }}>
+        <div
+          aria-hidden
+          style={{
+            display: "grid",
+            placeItems: "center",
+            width: 48,
+            height: 48,
+            marginBottom: 18,
+            borderRadius: 14,
+            background: "linear-gradient(145deg, #ff6a33, #c62828)",
+            color: "#fff",
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: "1.3rem",
+            boxShadow: "0 8px 20px rgba(214, 58, 9, 0.3)",
+          }}
+        >
+          K
+        </div>
+        <p style={{ letterSpacing: "0.14em", textTransform: "uppercase", fontSize: "0.72rem", fontWeight: 700, color: "var(--accent-ink)" }}>
           KRATOS&apos;26
         </p>
-        <h1 style={{ margin: "8px 0 10px", fontSize: "1.75rem" }}>Admin</h1>
-        <p className="muted" style={{ marginBottom: 22, lineHeight: 1.45 }}>
+        <h1 style={{ margin: "6px 0 10px", fontSize: "1.75rem" }}>Admin console</h1>
+        <p className="muted" style={{ marginBottom: 24, lineHeight: 1.5 }}>
           Sign in with Google. Access requires an active row in <code>admin_users</code>.
         </p>
         {loading ? (

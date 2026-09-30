@@ -5,6 +5,7 @@ import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import PageHeader from "@/components/ui/PageHeader";
+import StatusBadge from "@/components/ui/StatusBadge";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import {
@@ -155,20 +156,21 @@ export default function EventsPage() {
                         ev.team_max_size,
                       )}
                     </td>
-                    <td>{visibilityLabel(ev.visibility).toUpperCase()}</td>
-                    <td>{registrationStatusLabel(ev.registration_status).toUpperCase()}</td>
+                    <td><StatusBadge status={visibilityLabel(ev.visibility)} /></td>
+                    <td><StatusBadge status={registrationStatusLabel(ev.registration_status)} /></td>
                     <td>{ev.fee != null ? `₹${ev.fee}` : "—"}</td>
-                    <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <Link href={`/events/${ev.id}`} className="btn btn-ghost">
+                    <td>
+                     <div className="row-actions">
+                      <Link href={`/events/${ev.id}`} className="btn btn-ghost btn-sm">
                         Edit
                       </Link>
-                      <Link href={`/events/${ev.id}/preview`} className="btn btn-ghost">
+                      <Link href={`/events/${ev.id}/preview`} className="btn btn-ghost btn-sm">
                         Preview
                       </Link>
                       {canControl && ev.visibility !== "PUBLISHED" && (
                         <button
                           type="button"
-                          className="btn btn-ghost"
+                          className="btn btn-ghost btn-sm"
                           onClick={() => setConfirm({ id: String(ev.id), action: "publish" })}
                         >
                           Publish
@@ -177,7 +179,7 @@ export default function EventsPage() {
                       {canControl && ev.visibility === "PUBLISHED" && (
                         <button
                           type="button"
-                          className="btn btn-ghost"
+                          className="btn btn-ghost btn-sm"
                           onClick={() => setConfirm({ id: String(ev.id), action: "unpublish" })}
                         >
                           Unpublish
@@ -186,7 +188,7 @@ export default function EventsPage() {
                       {canControl && ev.visibility === "PUBLISHED" && ev.registration_status !== "OPEN" && (
                         <button
                           type="button"
-                          className="btn btn-ghost"
+                          className="btn btn-ghost btn-sm"
                           onClick={() => setConfirm({ id: String(ev.id), action: "open-registration" })}
                         >
                           Open registration
@@ -195,12 +197,13 @@ export default function EventsPage() {
                       {canControl && ev.registration_status === "OPEN" && (
                         <button
                           type="button"
-                          className="btn btn-ghost"
+                          className="btn btn-ghost btn-sm"
                           onClick={() => setConfirm({ id: String(ev.id), action: "close-registration" })}
                         >
                           Close registration
                         </button>
                       )}
+                     </div>
                     </td>
                   </tr>
                 ))}

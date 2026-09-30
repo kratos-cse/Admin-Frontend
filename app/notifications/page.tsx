@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
+import PageHeader from "@/components/ui/PageHeader";
 import { listEvents } from "@/lib/api/events";
 import { sendAnnouncement, sendReminder } from "@/lib/api/notifications";
 import { ApiError } from "@/lib/api/client";
@@ -40,10 +41,11 @@ export default function NotificationsPage() {
   return (
     <RequireAdmin>
       <AdminShell>
-        <div className="page-title">
-          <h1>Notifications</h1>
-          <p className="muted">Send-only — no notification CMS. Backend has announcement + reminder POSTs only.</p>
-        </div>
+        <PageHeader
+          eyebrow="Comms"
+          title="Notifications"
+          description="Send an announcement or reminder to everyone registered for an event."
+        />
         <div className="card" style={{ maxWidth: 560 }}>
           <div className="field">
             <label htmlFor="event">Event</label>

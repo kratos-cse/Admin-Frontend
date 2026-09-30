@@ -1,26 +1,19 @@
-import type { Metadata } from "next";
-import { Cinzel, Cinzel_Decorative, Rajdhani } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { IBM_Plex_Sans, Sora } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthProvider";
 
-const cinzel = Cinzel({
+const sora = Sora({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "900"],
-  variable: "--font-cinzel",
+  weight: ["500", "600", "700"],
+  variable: "--font-sora",
   display: "swap",
 });
 
-const cinzelDecorative = Cinzel_Decorative({
-  subsets: ["latin"],
-  weight: ["700", "900"],
-  variable: "--font-cinzel-decorative",
-  display: "swap",
-});
-
-const rajdhani = Rajdhani({
+const plex = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-rajdhani",
+  variable: "--font-plex",
   display: "swap",
 });
 
@@ -29,9 +22,15 @@ export const metadata: Metadata = {
   description: "KRATOS'26 administration panel",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#101318",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${cinzel.variable} ${cinzelDecorative.variable} ${rajdhani.variable}`}>
+    <html lang="en" className={`${sora.variable} ${plex.variable}`}>
       <body>
         <AuthProvider>{children}</AuthProvider>
       </body>
