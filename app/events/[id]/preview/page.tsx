@@ -79,7 +79,7 @@ export default function EventPreviewPage() {
             <Row
               label="Roster"
               value={rosterSummary(
-                rules.required_member_count,
+                rules.team_min_size,
                 rules.substitute_count,
                 rules.team_min_size,
                 rules.team_max_size,

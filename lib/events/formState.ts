@@ -46,20 +46,35 @@ export const CAPACITY_TYPES: { value: CapacityType; label: string }[] = [
   { value: "TEAMS", label: "Count teams" },
 ];
 
-export const ROSTER_SIZE_PRESETS = [1, 2, 3, 4, 5, 6, 8, 10] as const;
-export const MAX_REQUIRED_MEMBERS = 30;
-export const MAX_SUBSTITUTE_SLOTS = 20;
+export const MAX_TEAM_SIZE = 30;
 
-export function clampRequiredMemberCount(value: string | number): number {
+export const ROSTER_RANGE_PRESETS: { min: number; max: number; label: string }[] = [
+  { min: 1, max: 1, label: "Solo" },
+  { min: 2, max: 2, label: "2" },
+  { min: 3, max: 3, label: "3" },
+  { min: 3, max: 4, label: "3–4" },
+  { min: 4, max: 4, label: "4" },
+  { min: 4, max: 5, label: "4–5" },
+  { min: 5, max: 5, label: "5" },
+];
+
+export function clampTeamMinSize(value: string | number): number {
   const n = Math.floor(Number(value));
   if (!Number.isFinite(n)) return 1;
-  return Math.min(MAX_REQUIRED_MEMBERS, Math.max(1, n));
+  return Math.min(MAX_TEAM_SIZE, Math.max(1, n));
 }
 
-export function clampSubstituteCount(value: string | number): number {
+export function clampTeamMaxSize(value: string | number, min: number): number {
   const n = Math.floor(Number(value));
-  if (!Number.isFinite(n)) return 0;
-  return Math.min(MAX_SUBSTITUTE_SLOTS, Math.max(0, n));
+  const floor = Math.max(1, min);
+  if (!Number.isFinite(n)) return floor;
+  return Math.min(MAX_TEAM_SIZE, Math.max(floor, n));
+}
+
+export function normalizeTeamSizes(minRaw: string | number, maxRaw: string | number) {
+  const team_min_size = clampTeamMinSize(minRaw);
+  const team_max_size = clampTeamMaxSize(maxRaw, team_min_size);
+  return { team_min_size, team_max_size };
 }
 
 export type EventFormState = {
@@ -75,8 +90,8 @@ export type EventFormState = {
   starts_at: string;
   ends_at: string;
   registration_mode: RegistrationMode;
-  required_member_count: string;
-  substitute_count: string;
+  team_min_size: string;
+  team_max_size: string;
   allow_team_invite_flow: boolean;
   requires_qr_checkin: boolean;
   capacity_type: CapacityType;
@@ -97,8 +112,8 @@ export function emptyEventForm(): EventFormState {
     starts_at: "",
     ends_at: "",
     registration_mode: "TEAM_ONLY",
-    required_member_count: "4",
-    substitute_count: "0",
+    team_min_size: "3",
+    team_max_size: "4",
     allow_team_invite_flow: true,
     requires_qr_checkin: true,
     capacity_type: "TEAMS",
@@ -123,6 +138,13 @@ function fromLocalInput(value: string): string | null {
 
 export function formFromAdminEvent(ev: AdminEvent): EventFormState {
   const r = ev.rules;
+  const min = r?.team_min_size ?? r?.required_member_count ?? 1;
+  const max =
+    r?.team_max_size ??
+    (r?.required_member_count != null && r?.substitute_count != null
+      ? r.required_member_count + r.substitute_count
+      : min);
+  const sizes = normalizeTeamSizes(min, max);
   return {
     name: ev.name || "",
     tagline: ev.tagline || "",
@@ -136,8 +158,8 @@ export function formFromAdminEvent(ev: AdminEvent): EventFormState {
     starts_at: toLocalInput(ev.starts_at),
     ends_at: toLocalInput(ev.ends_at),
     registration_mode: r?.registration_mode || "TEAM_OR_INDIVIDUAL",
-    required_member_count: String(r?.required_member_count ?? r?.team_min_size ?? 1),
-    substitute_count: String(r?.substitute_count ?? Math.max(0, (r?.team_max_size ?? 1) - (r?.team_min_size ?? 1))),
+    team_min_size: String(sizes.team_min_size),
+    team_max_size: String(sizes.team_max_size),
     allow_team_invite_flow: Boolean(r?.allow_team_invite_flow),
     requires_qr_checkin: r?.requires_qr_checkin !== false,
     capacity_type: r?.capacity_type || "PARTICIPANTS",
@@ -151,16 +173,26 @@ export function isTeamMode(mode: RegistrationMode): boolean {
 
 export function rosterPreview(form: EventFormState): string {
   if (!isTeamMode(form.registration_mode)) return "Individuals only — no team roster";
-  const req = clampRequiredMemberCount(form.required_member_count);
-  const subs = clampSubstituteCount(form.substitute_count);
-  if (subs > 0) return `Team: ${req} members + up to ${subs} substitutes`;
-  return `Team: ${req} members`;
+  const { team_min_size, team_max_size } = normalizeTeamSizes(form.team_min_size, form.team_max_size);
+  if (team_min_size === team_max_size) return `Team: ${team_min_size} members`;
+  return `Team: ${team_min_size}–${team_max_size} members`;
+}
+
+function rosterPayload(form: EventFormState, team: boolean) {
+  const { team_min_size, team_max_size } = team
+    ? normalizeTeamSizes(form.team_min_size, form.team_max_size)
+    : { team_min_size: 1, team_max_size: 1 };
+  return {
+    team_min_size,
+    team_max_size,
+    required_member_count: team_min_size,
+    substitute_count: Math.max(0, team_max_size - team_min_size),
+  };
 }
 
 export function toCreateBody(form: EventFormState): AdminEventCreateBody {
   const team = isTeamMode(form.registration_mode);
-  const required = team ? clampRequiredMemberCount(form.required_member_count) : 1;
-  const substitutes = team ? clampSubstituteCount(form.substitute_count) : 0;
+  const roster = rosterPayload(form, team);
   return {
     name: form.name.trim(),
     tagline: form.tagline.trim() || null,
@@ -175,10 +207,7 @@ export function toCreateBody(form: EventFormState): AdminEventCreateBody {
     ends_at: fromLocalInput(form.ends_at),
     slot: deriveSlotFromSchedule(fromLocalInput(form.starts_at), fromLocalInput(form.ends_at)),
     registration_mode: form.registration_mode,
-    required_member_count: required,
-    substitute_count: substitutes,
-    team_min_size: required,
-    team_max_size: required + substitutes,
+    ...roster,
     allow_team_invite_flow: team ? form.allow_team_invite_flow : false,
     requires_qr_checkin: form.requires_qr_checkin,
     capacity_type: form.capacity_type,
@@ -205,14 +234,10 @@ export function toDetailsPatch(form: EventFormState) {
 
 export function toRulesPatch(form: EventFormState) {
   const team = isTeamMode(form.registration_mode);
-  const required = team ? clampRequiredMemberCount(form.required_member_count) : 1;
-  const substitutes = team ? clampSubstituteCount(form.substitute_count) : 0;
+  const roster = rosterPayload(form, team);
   return {
     registration_mode: form.registration_mode,
-    required_member_count: required,
-    substitute_count: substitutes,
-    team_min_size: required,
-    team_max_size: required + substitutes,
+    ...roster,
     allow_team_invite_flow: team ? form.allow_team_invite_flow : false,
     requires_qr_checkin: form.requires_qr_checkin,
     capacity_type: form.capacity_type,

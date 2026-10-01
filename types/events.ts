@@ -152,7 +152,13 @@ export function rosterSummary(
   const subs = Number(
     substitutes ?? (teamMax != null && teamMin != null ? Math.max(0, Number(teamMax) - Number(teamMin)) : 0),
   );
-  if (req <= 1 && subs <= 0) return "Individual";
-  if (subs > 0) return `${req} + ${subs}`;
+  const max =
+    teamMax != null
+      ? Number(teamMax)
+      : subs > 0
+        ? req + subs
+        : req;
+  if (req <= 1 && max <= 1) return "Individual";
+  if (max > req) return `${req}–${max}`;
   return `${req} members`;
 }

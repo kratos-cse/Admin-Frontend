@@ -1,14 +1,18 @@
 "use client";
 
 import type { EventFormState } from "@/lib/events/formState";
-import { ROSTER_SIZE_PRESETS, clampSubstituteCount, clampRequiredMemberCount } from "@/lib/events/formState";
+import {
+  ROSTER_RANGE_PRESETS,
+  clampTeamMaxSize,
+  clampTeamMinSize,
+  normalizeTeamSizes,
+} from "@/lib/events/formState";
 import editorStyles from "./editor/editor.module.css";
 
 type Props = {
   form: EventFormState;
   disabled?: boolean;
   onChange: (next: EventFormState) => void;
-  /** Use editor step field layout when true */
   variant?: "card" | "editor";
 };
 
@@ -40,6 +44,11 @@ export default function RosterSizeFields({ form, disabled, onChange, variant = "
   const set = <K extends keyof EventFormState>(key: K, value: EventFormState[K]) =>
     onChange({ ...form, [key]: value });
 
+  const applySizes = (min: number, max: number) => {
+    const { team_min_size, team_max_size } = normalizeTeamSizes(min, max);
+    onChange({ ...form, team_min_size: String(team_min_size), team_max_size: String(team_max_size) });
+  };
+
   const gridClass = variant === "editor" ? editorStyles.grid2 : undefined;
   const gridStyle = variant === "card" ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } : undefined;
 
@@ -47,62 +56,65 @@ export default function RosterSizeFields({ form, disabled, onChange, variant = "
     <>
       <div className={gridClass} style={gridStyle}>
         <Field
-          id="required_member_count"
-          label="Required members"
-          hint="Mandatory seats including the team leader (e.g. 4 = leader + 3 teammates)."
+          id="team_min_size"
+          label="Min members"
+          hint="Minimum roster size including the team leader (e.g. 3 = at least 3 on the team)."
         >
           <input
-            id="required_member_count"
+            id="team_min_size"
             type="number"
             min={1}
             max={30}
             step={1}
             inputMode="numeric"
             disabled={disabled}
-            value={form.required_member_count}
-            onChange={(e) => set("required_member_count", e.target.value)}
+            value={form.team_min_size}
+            onChange={(e) => set("team_min_size", e.target.value)}
             onBlur={() => {
-              const n = clampRequiredMemberCount(form.required_member_count);
-              if (String(n) !== form.required_member_count) {
-                set("required_member_count", String(n));
-              }
+              const min = clampTeamMinSize(form.team_min_size);
+              const max = clampTeamMaxSize(form.team_max_size, min);
+              applySizes(min, max);
             }}
           />
         </Field>
-        <Field id="substitute_count" label="Substitute slots" hint="Optional extras beyond the required roster.">
+        <Field
+          id="team_max_size"
+          label="Max members"
+          hint="Maximum roster size including the leader (e.g. 4 = up to 4 total)."
+        >
           <input
-            id="substitute_count"
+            id="team_max_size"
             type="number"
-            min={0}
-            max={20}
+            min={1}
+            max={30}
             step={1}
             inputMode="numeric"
             disabled={disabled}
-            value={form.substitute_count}
-            onChange={(e) => set("substitute_count", e.target.value)}
+            value={form.team_max_size}
+            onChange={(e) => set("team_max_size", e.target.value)}
             onBlur={() => {
-              const n = clampSubstituteCount(form.substitute_count);
-              if (String(n) !== form.substitute_count) {
-                set("substitute_count", String(n));
-              }
+              const min = clampTeamMinSize(form.team_min_size);
+              const max = clampTeamMaxSize(form.team_max_size, min);
+              applySizes(min, max);
             }}
           />
         </Field>
       </div>
       <div className={editorStyles.rosterPresets}>
-        <span className="muted">Quick set required:</span>
+        <span className="muted">Quick set (min–max):</span>
         <div className={editorStyles.rosterPresetBtns}>
-          {ROSTER_SIZE_PRESETS.map((n) => {
-            const active = Number(form.required_member_count) === n;
+          {ROSTER_RANGE_PRESETS.map(({ min, max, label }) => {
+            const active =
+              Number(form.team_min_size) === min && Number(form.team_max_size) === max;
             return (
               <button
-                key={n}
+                key={label}
                 type="button"
                 className={active ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}
                 disabled={disabled}
-                onClick={() => set("required_member_count", String(n))}
+                onClick={() => applySizes(min, max)}
               >
-                {n}
+                {label}
               </button>
             );
           })}

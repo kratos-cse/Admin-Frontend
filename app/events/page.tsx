@@ -149,12 +149,7 @@ export default function EventsPage() {
                     </td>
                     <td>{categoryLabel(ev.category)}</td>
                     <td>
-                      {rosterSummary(
-                        ev.required_member_count,
-                        ev.substitute_count,
-                        ev.team_min_size,
-                        ev.team_max_size,
-                      )}
+                      {rosterSummary(ev.team_min_size, ev.substitute_count, ev.team_min_size, ev.team_max_size)}
                     </td>
                     <td><StatusBadge status={visibilityLabel(ev.visibility)} /></td>
                     <td><StatusBadge status={registrationStatusLabel(ev.registration_status)} /></td>
