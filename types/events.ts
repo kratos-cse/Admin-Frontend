@@ -9,12 +9,15 @@ export type RegistrationMode = "INDIVIDUAL_ONLY" | "TEAM_ONLY" | "TEAM_OR_INDIVI
 export type CapacityType = "PARTICIPANTS" | "TEAMS";
 export type MemberRegistrationMode = "LEADER_MANAGED" | "SELF_ENTRY";
 
+export type TeamRosterStyle = "FIXED" | "RANGE" | "MEMBERS_SUBSTITUTES";
+
 export interface EventRules {
   registration_mode: RegistrationMode;
   team_min_size: number;
   team_max_size: number;
   required_member_count: number;
   substitute_count: number;
+  roster_style?: TeamRosterStyle;
   allow_individual: boolean;
   allow_team_invite_flow: boolean;
   requires_qr_checkin: boolean;
@@ -81,6 +84,7 @@ export interface EventListItem {
   team_max_size: number;
   required_member_count?: number;
   substitute_count?: number;
+  roster_style?: TeamRosterStyle;
 }
 
 export interface AdminEventCreateBody {
@@ -107,6 +111,7 @@ export interface AdminEventCreateBody {
   requires_qr_checkin?: boolean;
   capacity_type?: CapacityType;
   member_registration_mode?: MemberRegistrationMode;
+  roster_style?: TeamRosterStyle;
   custom_fields?: Record<string, unknown> | null;
 }
 
@@ -139,6 +144,7 @@ export type AdminRegistrationRulesUpdateBody = Partial<{
   requires_qr_checkin: boolean;
   capacity_type: CapacityType;
   member_registration_mode: MemberRegistrationMode;
+  roster_style: TeamRosterStyle;
   custom_fields: Record<string, unknown> | null;
 }>;
 
@@ -147,6 +153,7 @@ export function rosterSummary(
   substitutes?: number | null,
   teamMin?: number | null,
   teamMax?: number | null,
+  rosterStyle?: TeamRosterStyle | null,
 ): string {
   const req = Number(required ?? teamMin ?? 1) || 1;
   const subs = Number(
@@ -159,6 +166,8 @@ export function rosterSummary(
         ? req + subs
         : req;
   if (req <= 1 && max <= 1) return "Individual";
+  if (rosterStyle === "MEMBERS_SUBSTITUTES" && subs > 0) return `${req} + ${subs} subs`;
+  if (rosterStyle === "FIXED" || (max === req && max > 1)) return `${req} members`;
   if (max > req) return `${req}–${max}`;
   return `${req} members`;
 }

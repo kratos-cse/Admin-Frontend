@@ -20,7 +20,7 @@ import { useAuth } from "@/context/AuthProvider";
 import { canControlEvents, canEditEvents } from "@/lib/permissions";
 import { registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
 import { categoryLabel } from "@/lib/events/formState";
-import { rosterSummary, type EventListItem } from "@/types/events";
+import { rosterSummary, type EventListItem, type TeamRosterStyle } from "@/types/events";
 
 type ConfirmAction = "publish" | "unpublish" | "open-registration" | "close-registration";
 
@@ -149,7 +149,13 @@ export default function EventsPage() {
                     </td>
                     <td>{categoryLabel(ev.category)}</td>
                     <td>
-                      {rosterSummary(ev.team_min_size, ev.substitute_count, ev.team_min_size, ev.team_max_size)}
+                      {rosterSummary(
+                        ev.required_member_count ?? ev.team_min_size,
+                        ev.substitute_count,
+                        ev.team_min_size,
+                        ev.team_max_size,
+                        ev.roster_style as TeamRosterStyle | undefined,
+                      )}
                     </td>
                     <td><StatusBadge status={visibilityLabel(ev.visibility)} /></td>
                     <td><StatusBadge status={registrationStatusLabel(ev.registration_status)} /></td>

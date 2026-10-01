@@ -79,10 +79,11 @@ export default function EventPreviewPage() {
             <Row
               label="Roster"
               value={rosterSummary(
-                rules.team_min_size,
+                rules.required_member_count,
                 rules.substitute_count,
                 rules.team_min_size,
                 rules.team_max_size,
+                rules.roster_style,
               )}
             />
             <Row label="Registration" value={modeLabel} />
