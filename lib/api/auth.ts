@@ -61,7 +61,7 @@ export async function listAdminUsers(params?: { skip?: number; limit?: number })
   return apiFetchData(`/admin/admin-users${qs ? `?${qs}` : ""}`, { auth: true });
 }
 
-export async function createAdminUser(body: { user_id: string; role_id: string }) {
+export async function createAdminUser(body: { email: string; role_id: string } | { user_id: string; role_id: string }) {
   return apiFetchData("/admin/admin-users", { method: "POST", body, auth: true });
 }
 

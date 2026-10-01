@@ -31,6 +31,7 @@ type RoleRow = {
 type AdminRow = {
   admin_user_id: string;
   user_id: string;
+  email: string | null;
   is_active: boolean;
   role: { id: string; name: string } | null;
 };
@@ -61,6 +62,7 @@ function normalizeAdmins(raw: unknown): AdminRow[] {
     return {
       admin_user_id: String(o.admin_user_id || o.id || ""),
       user_id: String(o.user_id || ""),
+      email: o.email != null ? String(o.email) : null,
       is_active: o.is_active !== false,
       role: role?.id ? { id: String(role.id), name: String(role.name || "") } : null,
     };
@@ -78,7 +80,7 @@ export default function AdminsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [userId, setUserId] = useState("");
+  const [grantEmail, setGrantEmail] = useState("");
   const [grantRoleId, setGrantRoleId] = useState("");
   const [grantBusy, setGrantBusy] = useState(false);
 
@@ -165,12 +167,14 @@ export default function AdminsPage() {
               </div>
               <div className={styles.formRow}>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label htmlFor="user_id">User ID</label>
+                  <label htmlFor="grant_email">Email</label>
                   <input
-                    id="user_id"
-                    placeholder="UUID from users table"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value.trim())}
+                    id="grant_email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="person@college.edu"
+                    value={grantEmail}
+                    onChange={(e) => setGrantEmail(e.target.value)}
                   />
                 </div>
                 <div className="field" style={{ marginBottom: 0 }}>
@@ -190,13 +194,14 @@ export default function AdminsPage() {
                 <button
                   type="button"
                   className="btn btn-primary"
-                  disabled={!userId || !grantRoleId || grantBusy}
+                  disabled={!grantEmail.trim() || !grantRoleId || grantBusy}
                   onClick={() => {
                     setGrantBusy(true);
                     setError(null);
-                    void createAdminUser({ user_id: userId, role_id: grantRoleId })
+                    const email = grantEmail.trim().toLowerCase();
+                    void createAdminUser({ email, role_id: grantRoleId })
                       .then(() => {
-                        setUserId("");
+                        setGrantEmail("");
                         flash("Admin access granted");
                         return load();
                       })
@@ -279,11 +284,16 @@ export default function AdminsPage() {
                 return (
                   <div className={styles.adminRow} key={admin.admin_user_id}>
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 4 }}>User {shortId(admin.user_id, 12)}</div>
-                      <div className={styles.mono}>{admin.user_id}</div>
-                      <div className={styles.mono} style={{ marginTop: 4 }}>
-                        admin {shortId(admin.admin_user_id, 12)}
+                      <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                        {admin.email || `User ${shortId(admin.user_id, 12)}`}
                       </div>
+                      {admin.email ? (
+                        <div className={styles.mono} style={{ marginTop: 4 }}>
+                          {shortId(admin.user_id, 12)}
+                        </div>
+                      ) : (
+                        <div className={styles.mono}>{admin.user_id}</div>
+                      )}
                     </div>
                     <div>
                       <label className="muted" style={{ display: "block", marginBottom: 6, fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
@@ -315,7 +325,7 @@ export default function AdminsPage() {
                           setError(null);
                           void updateAdminUser(admin.admin_user_id, { role_id: selectedRole })
                             .then(() => {
-                              flash(`Role updated for ${shortId(admin.user_id)}`);
+                              flash(`Role updated for ${admin.email || shortId(admin.user_id)}`);
                               return load();
                             })
                             .catch((e: Error) => setError(e.message))
