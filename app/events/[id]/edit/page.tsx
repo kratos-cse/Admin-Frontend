@@ -23,6 +23,7 @@ import {
 import {
   closeRegistration,
   getAdminEvent,
+  markEventComingSoon,
   openRegistration,
   publishEvent,
   unpublishEvent,
@@ -51,7 +52,12 @@ import {
 import type { AdminEvent } from "@/types/events";
 import editorStyles from "@/components/events/editor/editor.module.css";
 
-type ConfirmAction = "publish" | "unpublish" | "open-registration" | "close-registration";
+type ConfirmAction =
+  | "publish"
+  | "unpublish"
+  | "open-registration"
+  | "close-registration"
+  | "coming-soon";
 
 export default function EventEditPage() {
   const params = useParams();
@@ -136,6 +142,7 @@ export default function EventEditPage() {
       if (confirm === "publish") await publishEvent(id);
       else if (confirm === "unpublish") await unpublishEvent(id);
       else if (confirm === "open-registration") await openRegistration(id);
+      else if (confirm === "coming-soon") await markEventComingSoon(id);
       else await closeRegistration(id);
       setConfirm(null);
       await load();
@@ -155,6 +162,13 @@ export default function EventEditPage() {
         return { title: "Unpublish event?", message: "The event will be hidden and registration will close.", confirmLabel: "Unpublish", danger: true };
       case "open-registration":
         return { title: "Open registration?", message: "Participants can register for this published event.", confirmLabel: "Open registration", danger: false };
+      case "coming-soon":
+        return {
+          title: "Mark as coming soon?",
+          message: "The event stays visible with a “Coming soon” label. Registration stays closed.",
+          confirmLabel: "Coming soon",
+          danger: false,
+        };
       default:
         return { title: "Close registration?", message: "New registrations will stop.", confirmLabel: "Close registration", danger: true };
     }

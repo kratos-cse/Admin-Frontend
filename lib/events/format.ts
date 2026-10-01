@@ -7,7 +7,16 @@ export function visibilityLabel(visibility?: EventVisibility | string | null): s
 }
 
 export function registrationStatusLabel(status?: EventRegistrationStatus | string | null): string {
-  return String(status || "").toUpperCase() === "OPEN" ? "Open" : "Closed";
+  switch (String(status || "").toUpperCase()) {
+    case "OPEN":
+      return "Open";
+    case "COMING_SOON":
+      return "Coming soon";
+    case "CLOSED":
+      return "Closed";
+    default:
+      return "Closed";
+  }
 }
 
 export function registrationAvailabilityLabel(
@@ -20,6 +29,8 @@ export function registrationAvailabilityLabel(
       return "Event full";
     case "CLOSED":
       return "Registration closed";
+    case "COMING_SOON":
+      return "Coming soon";
     default:
       return "Registration state unknown";
   }

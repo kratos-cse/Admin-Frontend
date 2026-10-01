@@ -11,6 +11,7 @@ import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import {
   closeRegistration,
   listEvents,
+  markEventComingSoon,
   openRegistration,
   publishEvent,
   unpublishEvent,
@@ -22,7 +23,12 @@ import { registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
 import { categoryLabel } from "@/lib/events/formState";
 import { rosterSummary, type EventListItem, type TeamRosterStyle } from "@/types/events";
 
-type ConfirmAction = "publish" | "unpublish" | "open-registration" | "close-registration";
+type ConfirmAction =
+  | "publish"
+  | "unpublish"
+  | "open-registration"
+  | "close-registration"
+  | "coming-soon";
 
 export default function EventsPage() {
   const { hasPermission, isSuperAdmin } = useAuth();
@@ -58,6 +64,7 @@ export default function EventsPage() {
       if (confirm.action === "publish") await publishEvent(confirm.id);
       else if (confirm.action === "unpublish") await unpublishEvent(confirm.id);
       else if (confirm.action === "open-registration") await openRegistration(confirm.id);
+      else if (confirm.action === "coming-soon") await markEventComingSoon(confirm.id);
       else await closeRegistration(confirm.id);
       setConfirm(null);
       await load();
@@ -73,7 +80,7 @@ export default function EventsPage() {
       case "publish":
         return {
           title: "Publish event?",
-          message: "The event will appear on the public website. Registration stays closed until you open it.",
+          message: "The event will appear on the public website as “Coming soon” until you open registration.",
           confirmLabel: "Publish",
           danger: false,
         };
@@ -89,6 +96,13 @@ export default function EventsPage() {
           title: "Open registration?",
           message: "Participants will be able to register for this published event.",
           confirmLabel: "Open registration",
+          danger: false,
+        };
+      case "coming-soon":
+        return {
+          title: "Mark as coming soon?",
+          message: "The event stays visible on the website with a “Coming soon” label. Registration stays closed.",
+          confirmLabel: "Coming soon",
           danger: false,
         };
       default:
@@ -184,6 +198,15 @@ export default function EventsPage() {
                           onClick={() => setConfirm({ id: String(ev.id), action: "unpublish" })}
                         >
                           Unpublish
+                        </button>
+                      )}
+                      {canControl && ev.visibility === "PUBLISHED" && ev.registration_status === "CLOSED" && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setConfirm({ id: String(ev.id), action: "coming-soon" })}
+                        >
+                          Coming soon
                         </button>
                       )}
                       {canControl && ev.visibility === "PUBLISHED" && ev.registration_status !== "OPEN" && (

@@ -22,6 +22,8 @@ const TONE: Record<string, string> = {
   refunded: "muted",
   closed: "muted",
   inactive: "muted",
+  "coming_soon": "warn",
+  coming: "warn",
 };
 
 export default function StatusBadge({ status }: { status: unknown }) {

@@ -1,8 +1,8 @@
 /** Event + registration-rule types aligned with kratos-backend admin schemas. */
 
 export type EventVisibility = "PUBLISHED" | "UNPUBLISHED";
-export type EventRegistrationStatus = "OPEN" | "CLOSED";
-export type RegistrationAvailability = "OPEN" | "CLOSED" | "FULL";
+export type EventRegistrationStatus = "OPEN" | "CLOSED" | "COMING_SOON";
+export type RegistrationAvailability = "OPEN" | "CLOSED" | "FULL" | "COMING_SOON";
 export type EventCategory = "TECHNICAL" | "PLAYGROUND" | "SPARK" | "ONLINE" | "TITLE_EVENT";
 export type EventSlot = "MORNING" | "AFTERNOON" | "EVENING" | "FULL_DAY" | "MULTI_DAY";
 export type RegistrationMode = "INDIVIDUAL_ONLY" | "TEAM_ONLY" | "TEAM_OR_INDIVIDUAL";
@@ -155,19 +155,20 @@ export function rosterSummary(
   teamMax?: number | null,
   rosterStyle?: TeamRosterStyle | null,
 ): string {
-  const req = Number(required ?? teamMin ?? 1) || 1;
-  const subs = Number(
-    substitutes ?? (teamMax != null && teamMin != null ? Math.max(0, Number(teamMax) - Number(teamMin)) : 0),
-  );
-  const max =
-    teamMax != null
-      ? Number(teamMax)
-      : subs > 0
-        ? req + subs
-        : req;
-  if (req <= 1 && max <= 1) return "Individual";
-  if (rosterStyle === "MEMBERS_SUBSTITUTES" && subs > 0) return `${req} + ${subs} subs`;
-  if (rosterStyle === "FIXED" || (max === req && max > 1)) return `${req} members`;
-  if (max > req) return `${req}–${max}`;
+  const min = Number(teamMin ?? required ?? 1) || 1;
+  const max = Number(teamMax ?? min) || min;
+  const req = Number(required ?? min) || min;
+  const style: TeamRosterStyle =
+    rosterStyle ?? (min === max ? "FIXED" : "RANGE");
+  const subs =
+    style === "MEMBERS_SUBSTITUTES"
+      ? Number(substitutes ?? Math.max(0, max - min)) || 0
+      : 0;
+
+  if (min <= 1 && max <= 1 && style !== "MEMBERS_SUBSTITUTES") return "Individual";
+  if (style === "MEMBERS_SUBSTITUTES" && subs > 0) return `${req} + ${subs} subs`;
+  if (style === "RANGE" && max > min) return `${min}–${max}`;
+  if (style === "FIXED" || max === min) return max > 1 ? `${max} members` : "Individual";
+  if (max > min) return `${min}–${max}`;
   return `${req} members`;
 }

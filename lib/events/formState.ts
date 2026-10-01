@@ -175,8 +175,11 @@ export function formFromAdminEvent(ev: AdminEvent): EventFormState {
       : min);
   const sizes = normalizeTeamSizes(min, max);
   const req = r?.required_member_count ?? sizes.team_min_size;
-  const subs = r?.substitute_count ?? Math.max(0, sizes.team_max_size - sizes.team_min_size);
   const style = parseRosterStyle(r?.roster_style, sizes.team_min_size, sizes.team_max_size);
+  const subs =
+    style === "MEMBERS_SUBSTITUTES"
+      ? (r?.substitute_count ?? Math.max(0, sizes.team_max_size - sizes.team_min_size))
+      : 0;
   return {
     name: ev.name || "",
     tagline: ev.tagline || "",
@@ -261,7 +264,7 @@ function rosterPayload(form: EventFormState, team: boolean) {
     team_min_size,
     team_max_size,
     required_member_count: team_min_size,
-    substitute_count: Math.max(0, team_max_size - team_min_size),
+    substitute_count: 0,
   };
 }
 

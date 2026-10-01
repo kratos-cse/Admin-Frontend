@@ -4,7 +4,12 @@ import type { AdminEvent } from "@/types/events";
 import { registrationAvailabilityLabel, registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
 import styles from "./editor.module.css";
 
-type ConfirmAction = "publish" | "unpublish" | "open-registration" | "close-registration";
+type ConfirmAction =
+  | "publish"
+  | "unpublish"
+  | "open-registration"
+  | "close-registration"
+  | "coming-soon";
 
 type Props = {
   event: AdminEvent;
@@ -64,6 +69,11 @@ export default function EventControlPanel({ event, canControl, busy, onAction }:
               Unpublish
             </button>
           )}
+          {event.visibility === "PUBLISHED" && event.registration_status === "CLOSED" ? (
+            <button type="button" className={styles.btnGhost} disabled={busy} onClick={() => onAction("coming-soon")}>
+              Mark coming soon
+            </button>
+          ) : null}
           {event.visibility === "PUBLISHED" && event.registration_status !== "OPEN" ? (
             <button type="button" className={styles.btnGhost} disabled={busy} onClick={() => onAction("open-registration")}>
               Open registration

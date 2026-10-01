@@ -59,6 +59,13 @@ export function closeRegistration(eventId: string) {
   });
 }
 
+export function markEventComingSoon(eventId: string) {
+  return apiFetchData<AdminEvent>(`/admin/events/${eventId}/coming-soon`, {
+    method: "POST",
+    auth: true,
+  });
+}
+
 export function getEventMetrics(eventId: string) {
   return apiFetchData(`/admin/events/${eventId}/metrics`, { auth: true });
 }
