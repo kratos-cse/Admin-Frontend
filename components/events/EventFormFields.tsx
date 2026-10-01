@@ -10,6 +10,7 @@ import {
   rosterPreview,
   type EventFormState,
 } from "@/lib/events/formState";
+import RosterSizeFields from "@/components/events/RosterSizeFields";
 
 type Props = {
   form: EventFormState;
@@ -140,28 +141,7 @@ export default function EventFormFields({ form, disabled, onChange }: Props) {
           <p className="muted" style={{ marginTop: 0 }}>
             {rosterPreview(form)}
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field id="required_member_count" label="Required members" hint="Mandatory seats (includes leader)">
-              <input
-                id="required_member_count"
-                type="number"
-                min={1}
-                disabled={disabled}
-                value={form.required_member_count}
-                onChange={(e) => set("required_member_count", e.target.value)}
-              />
-            </Field>
-            <Field id="substitute_count" label="Substitute slots" hint="Optional extras beyond mandatory">
-              <input
-                id="substitute_count"
-                type="number"
-                min={0}
-                disabled={disabled}
-                value={form.substitute_count}
-                onChange={(e) => set("substitute_count", e.target.value)}
-              />
-            </Field>
-          </div>
+          <RosterSizeFields form={form} disabled={disabled} onChange={onChange} />
           <Field id="member_registration_mode" label="How members join">
             <select
               id="member_registration_mode"

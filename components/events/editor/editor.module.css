@@ -11,6 +11,19 @@
   align-items: start;
 }
 
+.rosterPresets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.rosterPresetBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* Steps: horizontal scroller on phones */
 .stepper {
   position: sticky;

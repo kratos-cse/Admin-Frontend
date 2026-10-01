@@ -10,6 +10,7 @@ import {
   rosterPreview,
   type EventFormState,
 } from "@/lib/events/formState";
+import RosterSizeFields from "@/components/events/RosterSizeFields";
 import { deriveSlotFromSchedule } from "@/lib/events/deriveSlot";
 import type { AdminEvent } from "@/types/events";
 import styles from "../editor.module.css";
@@ -150,14 +151,7 @@ export function TeamConfigStep({ form, disabled, onChange }: StepProps) {
     <>
       <h3>Team roster</h3>
       <p className={styles.hint}>{rosterPreview(form)}</p>
-      <div className={styles.grid2}>
-        <Field id="required_member_count" label="Required members" hint="Mandatory seats (includes leader)">
-          <input id="required_member_count" type="number" min={1} disabled={disabled} value={form.required_member_count} onChange={(e) => set("required_member_count", e.target.value)} />
-        </Field>
-        <Field id="substitute_count" label="Substitute slots">
-          <input id="substitute_count" type="number" min={0} disabled={disabled} value={form.substitute_count} onChange={(e) => set("substitute_count", e.target.value)} />
-        </Field>
-      </div>
+      <RosterSizeFields form={form} disabled={disabled} onChange={onChange} variant="editor" />
       <Field id="member_registration_mode" label="How members join">
         <select id="member_registration_mode" disabled={disabled} value={form.member_registration_mode} onChange={(e) => set("member_registration_mode", e.target.value as EventFormState["member_registration_mode"])}>
           {MEMBER_MODES.map((m) => (
