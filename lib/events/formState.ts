@@ -159,8 +159,18 @@ function fromLocalInput(value: string): string | null {
   return d.toISOString();
 }
 
-function parseRosterStyle(raw: unknown, min: number, max: number): TeamRosterStyle {
-  if (raw === "FIXED" || raw === "RANGE" || raw === "MEMBERS_SUBSTITUTES") return raw;
+function parseRosterStyle(
+  raw: unknown,
+  min: number,
+  max: number,
+  substituteCount?: number,
+): TeamRosterStyle {
+  const subs = Math.max(0, Number(substituteCount ?? 0));
+  if (raw === "FIXED" || raw === "RANGE" || raw === "MEMBERS_SUBSTITUTES") {
+    if ((raw === "FIXED" || raw === "RANGE") && subs > 0) return "MEMBERS_SUBSTITUTES";
+    return raw;
+  }
+  if (subs > 0) return "MEMBERS_SUBSTITUTES";
   if (min === max) return "FIXED";
   return "RANGE";
 }
@@ -175,10 +185,18 @@ export function formFromAdminEvent(ev: AdminEvent): EventFormState {
       : min);
   const sizes = normalizeTeamSizes(min, max);
   const req = r?.required_member_count ?? sizes.team_min_size;
-  const style = parseRosterStyle(r?.roster_style, sizes.team_min_size, sizes.team_max_size);
+  const subsFromRule = Math.max(0, Number(r?.substitute_count ?? 0));
+  const style = parseRosterStyle(
+    r?.roster_style,
+    sizes.team_min_size,
+    sizes.team_max_size,
+    subsFromRule,
+  );
   const subs =
     style === "MEMBERS_SUBSTITUTES"
-      ? (r?.substitute_count ?? Math.max(0, sizes.team_max_size - sizes.team_min_size))
+      ? subsFromRule > 0
+        ? subsFromRule
+        : Math.max(0, sizes.team_max_size - sizes.team_min_size)
       : 0;
   return {
     name: ev.name || "",
