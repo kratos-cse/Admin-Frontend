@@ -86,7 +86,7 @@ export default function DashboardPage() {
             {hasPermission("team-read") && <Link href="/teams">Teams</Link>}
             {hasPermission("participant-read") && <Link href="/participants">Participants</Link>}
             {hasPermission("payment-read") && <Link href="/payments">Payments</Link>}
-            {hasPermission("export") && <Link href="/exports">Exports</Link>}
+            {!coordinator && hasPermission("export") && <Link href="/exports">Exports</Link>}
           </div>
 
           {loading && (
@@ -103,6 +103,12 @@ export default function DashboardPage() {
           {error && (
             <p className="state-error" role="alert">
               {error}
+            </p>
+          )}
+
+          {data && !loading && coordinator && (data.events_total ?? 0) === 0 && (
+            <p className="muted" role="status">
+              No events assigned yet. Contact a super admin to assign you to events.
             </p>
           )}
 

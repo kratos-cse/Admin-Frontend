@@ -15,6 +15,7 @@ export type AdminMeData = {
   is_active: boolean;
   role: { id: string; name: string } | null;
   permissions: string[];
+  assigned_event_ids?: string[] | null;
 };
 
 export async function loginWithGoogle(idToken: string): Promise<TokenResponse> {

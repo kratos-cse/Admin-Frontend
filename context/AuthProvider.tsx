@@ -17,6 +17,7 @@ import {
   type TokenResponse,
 } from "@/lib/api/auth";
 import { ApiError, getStoredToken, setStoredToken } from "@/lib/api/client";
+import { isEventCoordinatorRole } from "@/lib/permissions";
 
 type AuthContextValue = {
   token: string | null;
@@ -26,6 +27,7 @@ type AuthContextValue = {
   error: string | null;
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
+  isEventCoordinator: boolean;
   permissions: string[];
   hasPermission: (key: string) => boolean;
   signInWithGoogleCredential: (idToken: string) => Promise<void>;
@@ -116,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const permissions = admin?.permissions ?? [];
   const isSuperAdmin = (admin?.role?.name || "").toUpperCase() === SUPER_ADMIN_NAME;
+  const isEventCoordinator = isEventCoordinatorRole(admin?.role?.name);
 
   const hasPermission = useCallback(
     (key: string) => {
@@ -134,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       isAuthenticated: Boolean(token && admin),
       isSuperAdmin,
+      isEventCoordinator,
       permissions,
       hasPermission,
       signInWithGoogleCredential,
@@ -147,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       error,
       isSuperAdmin,
+      isEventCoordinator,
       permissions,
       hasPermission,
       signInWithGoogleCredential,

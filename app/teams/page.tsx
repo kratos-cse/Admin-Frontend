@@ -9,10 +9,14 @@ import PageHeader from "@/components/ui/PageHeader";
 import { listTeams } from "@/lib/api/teams";
 import { listEvents } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
-import { formatStatus, shortId } from "@/lib/permissions";
+import { formatStatus, shortId, isEventCoordinatorRole } from "@/lib/permissions";
+import { useAuth } from "@/context/AuthProvider";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 
 function TeamsInner() {
+  const { admin } = useAuth();
+  const isEventCoordinator = isEventCoordinatorRole(admin?.role?.name);
+  const allEventsLabel = isEventCoordinator ? "All my events" : "All events";
   const searchParams = useSearchParams();
   const eventIdParam = searchParams.get("event_id") || "";
   const [status, setStatus] = useState("");
@@ -65,7 +69,7 @@ function TeamsInner() {
       <PageHeader
         eyebrow="Operations"
         title={eventName ? `Teams · ${eventName}` : "Teams"}
-        description={eventId ? `Filtered to event ${shortId(eventId)}` : "All events"}
+        description={eventId ? `Filtered to event ${shortId(eventId)}` : allEventsLabel}
         actions={
           eventId ? <Link href={`/events/${eventId}`} className="btn btn-ghost">← Event workspace</Link> : undefined
         }
@@ -81,7 +85,7 @@ function TeamsInner() {
           }}
           style={{ padding: 10, background: "var(--bg-surface)", border: "1px solid var(--border)" }}
         >
-          <option value="">All events</option>
+          <option value="">{allEventsLabel}</option>
           {events.map((e) => (
             <option key={e.id} value={e.id}>{e.name}</option>
           ))}

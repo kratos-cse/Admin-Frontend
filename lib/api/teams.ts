@@ -16,7 +16,14 @@ export function listTeams(params?: {
   if (params?.skip != null) q.set("skip", String(params.skip));
   if (params?.limit != null) q.set("limit", String(params.limit));
   const qs = q.toString();
-  return apiFetchData(`/admin/teams${qs ? `?${qs}` : ""}`, { auth: true });
+  const data = await apiFetchData<{ items?: unknown[]; total?: number } | unknown[]>(
+    `/admin/teams${qs ? `?${qs}` : ""}`,
+    { auth: true }
+  );
+  if (Array.isArray(data)) {
+    return { items: data, total: data.length, skip: params?.skip ?? 0, limit: params?.limit ?? data.length };
+  }
+  return data;
 }
 
 export function updateTeam(teamId: string, body: Record<string, unknown>) {

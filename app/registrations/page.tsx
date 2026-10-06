@@ -20,7 +20,8 @@ import { useAuth } from "@/context/AuthProvider";
 function RegistrationsInner() {
   const searchParams = useSearchParams();
   const eventIdParam = searchParams.get("event_id") || "";
-  const { hasPermission, isSuperAdmin } = useAuth();
+  const { hasPermission, isSuperAdmin, isEventCoordinator } = useAuth();
+  const allEventsLabel = isEventCoordinator ? "All my events" : "All events";
   const [status, setStatus] = useState("");
   const [eventId, setEventId] = useState(eventIdParam);
   const [events, setEvents] = useState<{ id: string; name: string }[]>([]);
@@ -72,7 +73,7 @@ function RegistrationsInner() {
       <PageHeader
         eyebrow="Operations"
         title={eventName ? `Registrations · ${eventName}` : "Registrations"}
-        description={eventId ? `Filtered to event ${shortId(eventId)}` : "All events"}
+        description={eventId ? `Filtered to event ${shortId(eventId)}` : allEventsLabel}
         actions={
           eventId ? (
             <Link href={`/events/${eventId}`} className="btn btn-ghost">← Event workspace</Link>
@@ -90,7 +91,7 @@ function RegistrationsInner() {
           }}
           style={{ padding: 10, background: "var(--bg-surface)", border: "1px solid var(--border)" }}
         >
-          <option value="">All events</option>
+          <option value="">{allEventsLabel}</option>
           {events.map((e) => (
             <option key={e.id} value={e.id}>{e.name}</option>
           ))}
@@ -164,7 +165,7 @@ function RegistrationsInner() {
                       <Link href={`/registrations/${String(r.id)}`} className="btn btn-ghost btn-sm">
                         View
                       </Link>
-                      {hasPermission("registration-edit") && (
+                      {!isEventCoordinator && hasPermission("registration-edit") && (
                         <button
                           type="button"
                           className="btn btn-ghost btn-sm"

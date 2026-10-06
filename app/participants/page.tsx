@@ -9,10 +9,14 @@ import PageHeader from "@/components/ui/PageHeader";
 import { listParticipants } from "@/lib/api/participants";
 import { listEvents } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
-import { shortId } from "@/lib/permissions";
+import { isEventCoordinatorRole, shortId } from "@/lib/permissions";
+import { useAuth } from "@/context/AuthProvider";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 
 function ParticipantsInner() {
+  const { admin } = useAuth();
+  const isEventCoordinator = isEventCoordinatorRole(admin?.role?.name);
+  const allEventsLabel = isEventCoordinator ? "All my events" : "All events";
   const searchParams = useSearchParams();
   const eventIdParam = searchParams.get("event_id") || "";
   const [q, setQ] = useState("");
@@ -69,7 +73,7 @@ function ParticipantsInner() {
       <PageHeader
         eyebrow="Operations"
         title={eventName ? `Participants · ${eventName}` : "Participants"}
-        description={eventId ? `Filtered to event ${shortId(eventId)}` : "All events"}
+        description={eventId ? `Filtered to event ${shortId(eventId)}` : allEventsLabel}
         actions={
           eventId ? <Link href={`/events/${eventId}`} className="btn btn-ghost">← Event workspace</Link> : undefined
         }
@@ -95,7 +99,7 @@ function ParticipantsInner() {
           }}
           style={{ padding: 10, background: "var(--bg-surface)", border: "1px solid var(--border)" }}
         >
-          <option value="">All events</option>
+          <option value="">{allEventsLabel}</option>
           {events.map((e) => (
             <option key={e.id} value={e.id}>{e.name}</option>
           ))}

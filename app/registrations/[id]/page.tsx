@@ -9,6 +9,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import DetailFormSkeleton from "@/components/ui/DetailFormSkeleton";
 import StatusBadge from "@/components/ui/StatusBadge";
 import FieldResponsesTable from "@/components/operations/FieldResponsesTable";
+import RecoverCapturedPaymentButton from "@/components/operations/RecoverCapturedPaymentButton";
 import { getRegistration } from "@/lib/api/registrations";
 import { ApiError } from "@/lib/api/client";
 import { formatAdminError } from "@/lib/errors/adminMessages";
@@ -25,6 +26,7 @@ export default function RegistrationDetailPage() {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recoverError, setRecoverError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +74,7 @@ export default function RegistrationDetailPage() {
           }
         />
         {error && <p className="state-error">{error}</p>}
+        {recoverError && <p className="state-error">{recoverError}</p>}
         {loading ? <DetailFormSkeleton fields={8} label="Loading registration" /> : null}
         {!loading && data && (
           <div style={{ display: "grid", gap: 16 }}>
@@ -93,6 +96,22 @@ export default function RegistrationDetailPage() {
                   </tbody>
                 </table>
               </div>
+              {payment.id && data.status && payment.status ? (
+                <div style={{ marginTop: 16 }}>
+                  <RecoverCapturedPaymentButton
+                    registrationId={id}
+                    paymentId={String(payment.id)}
+                    participantName={String(participant.full_name || teamObj.name || "")}
+                    paymentStatus={String(payment.status)}
+                    registrationStatus={String(data.status)}
+                    onRecovered={() => {
+                      setRecoverError(null);
+                      getRegistration(id).then((detail) => setData(detail as Record<string, unknown>));
+                    }}
+                    onError={(msg) => setRecoverError(msg)}
+                  />
+                </div>
+              ) : null}
             </div>
 
             {teamObj.id ? (

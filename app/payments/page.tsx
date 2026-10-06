@@ -9,12 +9,18 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import PageHeader from "@/components/ui/PageHeader";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { listPayments, refundPayment } from "@/lib/api/payments";
+import { listEvents } from "@/lib/api/events";
 import { deletePayment } from "@/lib/api/records";
 import { ApiError } from "@/lib/api/client";
+import { isEventCoordinatorRole, shortId } from "@/lib/permissions";
 import { useAuth } from "@/context/AuthProvider";
 
 export default function PaymentsPage() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, admin } = useAuth();
+  const isEventCoordinator = isEventCoordinatorRole(admin?.role?.name);
+  const allEventsLabel = isEventCoordinator ? "All my events" : "All events";
+  const [eventId, setEventId] = useState("");
+  const [events, setEvents] = useState<{ id: string; name: string }[]>([]);
   const [status, setStatus] = useState("");
   const [skip, setSkip] = useState(0);
   const limit = 20;
@@ -29,9 +35,12 @@ export default function PaymentsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = (await listPayments({ status: status || undefined, skip, limit })) as {
-        items?: unknown[];
-      };
+      const data = await listPayments({
+        event_id: eventId || undefined,
+        status: status || undefined,
+        skip,
+        limit,
+      });
       setItems((data.items || []) as Record<string, unknown>[]);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load");
@@ -43,7 +52,13 @@ export default function PaymentsPage() {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, skip]);
+  }, [status, skip, eventId]);
+
+  useEffect(() => {
+    void listEvents()
+      .then((rows) => setEvents(rows.map((e) => ({ id: String(e.id), name: String(e.name) }))))
+      .catch(() => setEvents([]));
+  }, []);
 
   return (
     <RequireAdmin>
@@ -53,7 +68,20 @@ export default function PaymentsPage() {
           title="Payments"
           description="Track Razorpay orders and payment status. Refunds are limited to Super Admins."
         />
-        <div className="toolbar">
+        <div className="toolbar" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <select
+            value={eventId}
+            onChange={(e) => {
+              setSkip(0);
+              setEventId(e.target.value);
+            }}
+            style={{ padding: 10, background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+          >
+            <option value="">{allEventsLabel}</option>
+            {events.map((e) => (
+              <option key={e.id} value={e.id}>{e.name}</option>
+            ))}
+          </select>
           <select value={status} onChange={(e) => { setSkip(0); setStatus(e.target.value); }}>
             <option value="">All statuses</option>
             <option value="CREATED">CREATED</option>
