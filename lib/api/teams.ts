@@ -4,7 +4,7 @@ export function getTeam(teamId: string) {
   return apiFetchData(`/admin/teams/${teamId}`, { auth: true });
 }
 
-export function listTeams(params?: {
+export async function listTeams(params?: {
   event_id?: string;
   status?: string;
   skip?: number;
