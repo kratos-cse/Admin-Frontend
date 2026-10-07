@@ -14,12 +14,16 @@ import {
   listRoles,
   updateAdminUser,
   updateRole,
+  type AssignedEventSummary,
 } from "@/lib/api/auth";
+import { listEvents } from "@/lib/api/events";
 import { deleteAdminUser } from "@/lib/api/records";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
 import { PERMISSION_CATALOG, shortId } from "@/lib/permissions";
 import styles from "./admins.module.css";
+
+const EVENT_COORDINATOR_ROLE = "EVENT COORDINATOR";
 
 type RoleRow = {
   role_id: string;
@@ -34,7 +38,10 @@ type AdminRow = {
   email: string | null;
   is_active: boolean;
   role: { id: string; name: string } | null;
+  assigned_events: AssignedEventSummary[];
 };
+
+type EventOption = { id: string; name: string };
 
 function normalizeRoles(raw: unknown): RoleRow[] {
   const list = Array.isArray(raw) ? raw : [];
@@ -47,6 +54,18 @@ function normalizeRoles(raw: unknown): RoleRow[] {
       permissions: Array.isArray(o.permissions) ? (o.permissions as string[]) : [],
     };
   });
+}
+
+function normalizeAssignedEvents(raw: unknown): AssignedEventSummary[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      const o = item as Record<string, unknown>;
+      const id = String(o.id || "");
+      const name = String(o.name || "");
+      return id ? { id, name } : null;
+    })
+    .filter((item): item is AssignedEventSummary => item != null);
 }
 
 function normalizeAdmins(raw: unknown): AdminRow[] {
@@ -65,8 +84,19 @@ function normalizeAdmins(raw: unknown): AdminRow[] {
       email: o.email != null ? String(o.email) : null,
       is_active: o.is_active !== false,
       role: role?.id ? { id: String(role.id), name: String(role.name || "") } : null,
+      assigned_events: normalizeAssignedEvents(o.assigned_events),
     };
   });
+}
+
+function sameIdSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  return b.every((id) => set.has(id));
+}
+
+function toggleId(list: string[], id: string): string[] {
+  return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
 }
 
 const PERM_GROUPS = Array.from(new Set(PERMISSION_CATALOG.map((p) => p.group)));
@@ -76,15 +106,18 @@ export default function AdminsPage() {
   const router = useRouter();
   const [admins, setAdmins] = useState<AdminRow[]>([]);
   const [roles, setRoles] = useState<RoleRow[]>([]);
+  const [events, setEvents] = useState<EventOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [grantEmail, setGrantEmail] = useState("");
   const [grantRoleId, setGrantRoleId] = useState("");
+  const [grantEventIds, setGrantEventIds] = useState<string[]>([]);
   const [grantBusy, setGrantBusy] = useState(false);
 
   const [roleEdits, setRoleEdits] = useState<Record<string, string>>({});
+  const [eventEdits, setEventEdits] = useState<Record<string, string[]>>({});
   const [savingAdminId, setSavingAdminId] = useState<string | null>(null);
   const [deactivateId, setDeactivateId] = useState<string | null>(null);
   const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
@@ -105,13 +138,30 @@ export default function AdminsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [a, r] = await Promise.all([listAdminUsers({ skip: 0, limit: 100 }), listRoles()]);
+      const [a, r, ev] = await Promise.all([
+        listAdminUsers({ skip: 0, limit: 100 }),
+        listRoles(),
+        listEvents(),
+      ]);
       const nextAdmins = normalizeAdmins(a);
       const nextRoles = normalizeRoles(r);
+      const nextEvents = (Array.isArray(ev) ? ev : []).map((e) => ({
+        id: String(e.id),
+        name: String(e.name || "Untitled event"),
+      }));
       setAdmins(nextAdmins);
       setRoles(nextRoles);
+      setEvents(nextEvents);
       setRoleEdits(
         Object.fromEntries(nextAdmins.map((admin) => [admin.admin_user_id, admin.role?.id || ""]))
+      );
+      setEventEdits(
+        Object.fromEntries(
+          nextAdmins.map((admin) => [
+            admin.admin_user_id,
+            admin.assigned_events.map((evItem) => evItem.id),
+          ])
+        )
       );
       setGrantRoleId((prev) => prev || nextRoles[0]?.role_id || "");
     } catch (err) {
@@ -130,6 +180,11 @@ export default function AdminsPage() {
   }, [isSuperAdmin, router, load]);
 
   const assignableRoles = useMemo(() => roles, [roles]);
+  const grantRoleName = useMemo(
+    () => assignableRoles.find((r) => r.role_id === grantRoleId)?.name || "",
+    [assignableRoles, grantRoleId]
+  );
+  const grantIsCoordinator = grantRoleName.toUpperCase() === EVENT_COORDINATOR_ROLE;
 
   function flash(msg: string) {
     setSuccess(msg);
@@ -138,6 +193,10 @@ export default function AdminsPage() {
 
   function togglePerm(list: string[], key: string, setter: (v: string[]) => void) {
     setter(list.includes(key) ? list.filter((k) => k !== key) : [...list, key]);
+  }
+
+  function roleNameForId(roleId: string): string {
+    return assignableRoles.find((r) => r.role_id === roleId)?.name || "";
   }
 
   if (!isSuperAdmin) return null;
@@ -182,7 +241,14 @@ export default function AdminsPage() {
                   <select
                     id="grant_role"
                     value={grantRoleId}
-                    onChange={(e) => setGrantRoleId(e.target.value)}
+                    onChange={(e) => {
+                      setGrantRoleId(e.target.value);
+                      const nextName =
+                        assignableRoles.find((r) => r.role_id === e.target.value)?.name || "";
+                      if (nextName.toUpperCase() !== EVENT_COORDINATOR_ROLE) {
+                        setGrantEventIds([]);
+                      }
+                    }}
                   >
                     {assignableRoles.map((role) => (
                       <option key={role.role_id} value={role.role_id}>
@@ -199,10 +265,18 @@ export default function AdminsPage() {
                     setGrantBusy(true);
                     setError(null);
                     const email = grantEmail.trim().toLowerCase();
-                    void createAdminUser({ email, role_id: grantRoleId })
+                    const body = grantIsCoordinator
+                      ? { email, role_id: grantRoleId, event_ids: grantEventIds }
+                      : { email, role_id: grantRoleId };
+                    void createAdminUser(body)
                       .then(() => {
                         setGrantEmail("");
-                        flash("Admin access granted");
+                        setGrantEventIds([]);
+                        flash(
+                          grantIsCoordinator
+                            ? "Coordinator granted with event assignments"
+                            : "Admin access granted"
+                        );
                         return load();
                       })
                       .catch((e: Error) => setError(e.message))
@@ -212,6 +286,13 @@ export default function AdminsPage() {
                   {grantBusy ? "Granting…" : "Grant"}
                 </button>
               </div>
+              {grantIsCoordinator ? (
+                <EventAssignmentPicker
+                  events={events}
+                  selected={grantEventIds}
+                  onToggle={(id) => setGrantEventIds((prev) => toggleId(prev, id))}
+                />
+              ) : null}
             </section>
 
             <section className={`card ${styles.card}`}>
@@ -280,7 +361,14 @@ export default function AdminsPage() {
             ) : (
               admins.map((admin) => {
                 const selectedRole = roleEdits[admin.admin_user_id] || admin.role?.id || "";
-                const dirty = selectedRole !== (admin.role?.id || "");
+                const selectedRoleName = roleNameForId(selectedRole);
+                const isCoordinator = selectedRoleName.toUpperCase() === EVENT_COORDINATOR_ROLE;
+                const selectedEvents = eventEdits[admin.admin_user_id] || [];
+                const baselineEvents = admin.assigned_events.map((evItem) => evItem.id);
+                const roleDirty = selectedRole !== (admin.role?.id || "");
+                const eventsDirty =
+                  isCoordinator && !sameIdSet(selectedEvents, baselineEvents);
+                const dirty = roleDirty || eventsDirty;
                 return (
                   <div className={styles.adminRow} key={admin.admin_user_id}>
                     <div>
@@ -294,6 +382,18 @@ export default function AdminsPage() {
                       ) : (
                         <div className={styles.mono}>{admin.user_id}</div>
                       )}
+                      {!isCoordinator && admin.assigned_events.length > 0 ? (
+                        <p className="muted" style={{ margin: "6px 0 0", fontSize: "0.82rem" }}>
+                          Stale coordinator assignments will clear on save.
+                        </p>
+                      ) : null}
+                      {admin.role?.name.toUpperCase() === EVENT_COORDINATOR_ROLE &&
+                      admin.assigned_events.length > 0 &&
+                      !eventsDirty ? (
+                        <p className={styles.assignedSummary}>
+                          Assigned: {admin.assigned_events.map((e) => e.name).join(", ")}
+                        </p>
+                      ) : null}
                     </div>
                     <div>
                       <label className="muted" style={{ display: "block", marginBottom: 6, fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
@@ -303,9 +403,19 @@ export default function AdminsPage() {
                         className={styles.roleSelect}
                         value={selectedRole}
                         disabled={!admin.is_active}
-                        onChange={(e) =>
-                          setRoleEdits((prev) => ({ ...prev, [admin.admin_user_id]: e.target.value }))
-                        }
+                        onChange={(e) => {
+                          const nextRoleId = e.target.value;
+                          setRoleEdits((prev) => ({ ...prev, [admin.admin_user_id]: nextRoleId }));
+                          const nextName = roleNameForId(nextRoleId);
+                          if (nextName.toUpperCase() !== EVENT_COORDINATOR_ROLE) {
+                            setEventEdits((prev) => ({ ...prev, [admin.admin_user_id]: [] }));
+                          } else if (!(admin.admin_user_id in eventEdits)) {
+                            setEventEdits((prev) => ({
+                              ...prev,
+                              [admin.admin_user_id]: baselineEvents,
+                            }));
+                          }
+                        }}
                       >
                         {assignableRoles.map((role) => (
                           <option key={role.role_id} value={role.role_id}>
@@ -313,6 +423,19 @@ export default function AdminsPage() {
                           </option>
                         ))}
                       </select>
+                      {isCoordinator ? (
+                        <EventAssignmentPicker
+                          events={events}
+                          selected={selectedEvents}
+                          disabled={!admin.is_active}
+                          onToggle={(id) =>
+                            setEventEdits((prev) => ({
+                              ...prev,
+                              [admin.admin_user_id]: toggleId(prev[admin.admin_user_id] || [], id),
+                            }))
+                          }
+                        />
+                      ) : null}
                     </div>
                     <StatusBadge status={admin.is_active ? "active" : "inactive"} />
                     <div className={styles.actions}>
@@ -323,16 +446,20 @@ export default function AdminsPage() {
                         onClick={() => {
                           setSavingAdminId(admin.admin_user_id);
                           setError(null);
-                          void updateAdminUser(admin.admin_user_id, { role_id: selectedRole })
+                          const body =
+                            selectedRoleName.toUpperCase() === EVENT_COORDINATOR_ROLE
+                              ? { role_id: selectedRole, event_ids: selectedEvents }
+                              : { role_id: selectedRole };
+                          void updateAdminUser(admin.admin_user_id, body)
                             .then(() => {
-                              flash(`Role updated for ${admin.email || shortId(admin.user_id)}`);
+                              flash(`Updated ${admin.email || shortId(admin.user_id)}`);
                               return load();
                             })
                             .catch((e: Error) => setError(e.message))
                             .finally(() => setSavingAdminId(null));
                         }}
                       >
-                        {savingAdminId === admin.admin_user_id ? "Saving…" : "Save role"}
+                        {savingAdminId === admin.admin_user_id ? "Saving…" : "Save"}
                       </button>
                       {admin.is_active && (
                         <button
@@ -542,6 +669,46 @@ function PermissionPicker({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function EventAssignmentPicker({
+  events,
+  selected,
+  onToggle,
+  disabled = false,
+}: {
+  events: EventOption[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className={styles.eventAssign}>
+      <div className={styles.eventAssignHead}>
+        <span>Assigned events</span>
+        <span className="muted">{selected.length} selected</span>
+      </div>
+      {events.length === 0 ? (
+        <p className="muted" style={{ margin: 0, fontSize: "0.88rem" }}>
+          No events available. Create events first, then assign this coordinator.
+        </p>
+      ) : (
+        <div className={styles.eventCheckGrid}>
+          {events.map((event) => (
+            <label className={styles.check} key={event.id}>
+              <input
+                type="checkbox"
+                checked={selected.includes(event.id)}
+                disabled={disabled}
+                onChange={() => onToggle(event.id)}
+              />
+              {event.name}
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

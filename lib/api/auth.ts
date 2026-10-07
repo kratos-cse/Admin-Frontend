@@ -62,13 +62,28 @@ export async function listAdminUsers(params?: { skip?: number; limit?: number })
   return apiFetchData(`/admin/admin-users${qs ? `?${qs}` : ""}`, { auth: true });
 }
 
-export async function createAdminUser(body: { email: string; role_id: string } | { user_id: string; role_id: string }) {
+export type AssignedEventSummary = { id: string; name: string };
+
+export type AdminUserListItem = {
+  admin_user_id: string;
+  user_id: string;
+  email: string | null;
+  is_active: boolean;
+  role: { id: string; name: string } | null;
+  assigned_events?: AssignedEventSummary[];
+};
+
+export async function createAdminUser(
+  body:
+    | { email: string; role_id: string; event_ids?: string[] }
+    | { user_id: string; role_id: string; event_ids?: string[] }
+) {
   return apiFetchData("/admin/admin-users", { method: "POST", body, auth: true });
 }
 
 export async function updateAdminUser(
   adminUserId: string,
-  body: { role_id?: string; is_active?: boolean }
+  body: { role_id?: string; is_active?: boolean; event_ids?: string[] }
 ) {
   return apiFetchData(`/admin/admin-users/${adminUserId}`, { method: "PATCH", body, auth: true });
 }
