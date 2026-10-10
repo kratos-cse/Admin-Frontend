@@ -112,7 +112,8 @@ export default function ExportsPage() {
             <section className="card">
               <h3 style={{ marginBottom: 8 }}>Team rosters</h3>
               <p className="muted" style={{ marginBottom: 12, fontSize: "0.92rem" }}>
-                One row per team member (vertical layout). Same export as on the Teams page.
+                One row per team member. Includes every team for this event with a confirmed registration and paid
+                payment (FORMING / unpaid teams are omitted). Data is read directly from the database.
               </p>
               <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, fontSize: "0.9rem" }}>
                 <input
@@ -135,7 +136,7 @@ export default function ExportsPage() {
                   )
                 }
               >
-                {busy === "rosters" ? "Downloading…" : eventId ? "Export team rosters" : "Select an event above"}
+                {busy === "rosters" ? "Downloading…" : eventId ? "Export confirmed teams (paid)" : "Select an event above"}
               </button>
               {eventId ? (
                 <p className="muted" style={{ marginTop: 10, fontSize: "0.85rem" }}>

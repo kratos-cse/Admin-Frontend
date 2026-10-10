@@ -99,7 +99,7 @@ function TeamsInner() {
                 disabled={exporting}
                 onClick={() => void onExportRosters()}
               >
-                {exporting ? "Exporting…" : "Export team rosters"}
+                {exporting ? "Exporting…" : "Export confirmed teams (paid)"}
               </button>
               <Link href={`/events/${eventId}`} className="btn btn-ghost">← Event workspace</Link>
             </div>
