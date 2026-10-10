@@ -87,7 +87,7 @@ function ParticipantsInner() {
             setSkip(0);
             setQ(e.target.value);
           }}
-          style={{ minWidth: 240, padding: "10px 12px", border: "1px solid var(--border)", background: "var(--bg-surface)", borderRadius: 2 }}
+          style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--border)", background: "var(--bg-surface)", borderRadius: 2 }}
         />
         <select
           value={eventId}
