@@ -213,7 +213,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       </header>
 
       <aside id="admin-nav" className={`${styles.sidebar} ${open ? styles.open : ""}`} aria-label="Admin navigation">
-        <Link href="/" className={styles.brand}>
+        <div className={styles.sidebarTop}>
+          <Link href="/" className={styles.brand}>
           <span className={styles.brandMark} aria-hidden>
             K
           </span>
@@ -222,6 +223,15 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             <small>Admin console</small>
           </span>
         </Link>
+          <button
+            type="button"
+            className={styles.closeBtn}
+            aria-label="Close menu"
+            onClick={() => setOpen(false)}
+          >
+            ×
+          </button>
+        </div>
 
         <nav className={styles.nav}>
           {groups.map((group) => (

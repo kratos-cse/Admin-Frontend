@@ -1,0 +1,124 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.progress {
+  padding: 12px 14px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.progress p {
+  margin: 0 0 6px;
+}
+
+.progress p:last-child {
+  margin-bottom: 0;
+}
+
+.warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.sectionTitle {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.memberList {
+  display: grid;
+  gap: 10px;
+}
+
+.memberCard {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+}
+
+.memberHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.meta {
+  margin: 10px 0 0;
+  display: grid;
+  gap: 6px;
+}
+
+.meta div {
+  display: grid;
+  grid-template-columns: minmax(88px, 34%) 1fr;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.meta dt {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.openSlot,
+.openSlotSub {
+  padding: 12px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.openSlotSub {
+  border-color: var(--warn-edge);
+  color: var(--warn);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions .btn {
+  flex: 1 1 140px;
+}
+
+.form {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+}
+
+.formActions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+@media (min-width: 480px) {
+  .formActions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}

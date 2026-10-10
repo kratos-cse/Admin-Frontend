@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import PageHeader from "@/components/ui/PageHeader";
+import { downloadTeamRostersExport } from "@/lib/api/exports";
 import { listTeams } from "@/lib/api/teams";
 import { listEvents } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
@@ -27,6 +28,8 @@ function TeamsInner() {
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [includeInactive, setIncludeInactive] = useState(false);
 
   useEffect(() => {
     setEventId(eventIdParam);
@@ -64,6 +67,23 @@ function TeamsInner() {
 
   const eventName = events.find((e) => e.id === eventId)?.name;
 
+  async function onExportRosters() {
+    if (!eventId) return;
+    setExporting(true);
+    setError(null);
+    try {
+      await downloadTeamRostersExport(eventId, {
+        format: "xlsx",
+        includeInactive,
+        eventName: eventName || undefined,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -71,7 +91,19 @@ function TeamsInner() {
         title={eventName ? `Teams · ${eventName}` : "Teams"}
         description={eventId ? `Filtered to event ${shortId(eventId)}` : allEventsLabel}
         actions={
-          eventId ? <Link href={`/events/${eventId}`} className="btn btn-ghost">← Event workspace</Link> : undefined
+          eventId ? (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={exporting}
+                onClick={() => void onExportRosters()}
+              >
+                {exporting ? "Exporting…" : "Export team rosters"}
+              </button>
+              <Link href={`/events/${eventId}`} className="btn btn-ghost">← Event workspace</Link>
+            </div>
+          ) : undefined
         }
       />
       <div className="toolbar" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -104,7 +136,22 @@ function TeamsInner() {
           <option value="COMPLETE">COMPLETE</option>
           <option value="CANCELLED">CANCELLED</option>
         </select>
+        {eventId ? (
+          <label className="muted" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input
+              type="checkbox"
+              checked={includeInactive}
+              onChange={(e) => setIncludeInactive(e.target.checked)}
+            />
+            Include left/removed members
+          </label>
+        ) : null}
       </div>
+      {!eventId ? (
+        <p className="muted" style={{ marginTop: 8 }}>
+          Select an event to export a vertical team roster (one row per member).
+        </p>
+      ) : null}
       {error && <p className="state-error">{error}</p>}
       {loading ? (
         <TableSkeleton columns={4} label="Loading teams" />

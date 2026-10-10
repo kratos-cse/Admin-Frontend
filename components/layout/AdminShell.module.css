@@ -91,11 +91,37 @@
     visibility 0s linear 0s;
 }
 
+.sidebarTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 12px;
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin-top: 2px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--nav-hover);
+  color: var(--nav-text-strong);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 10px 20px;
+  padding: 6px 10px 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .brandMark {
@@ -308,7 +334,8 @@
 /* ── Desktop: fixed rail, no top bar ── */
 @media (min-width: 900px) {
   .topbar,
-  .scrim {
+  .scrim,
+  .closeBtn {
     display: none;
   }
 

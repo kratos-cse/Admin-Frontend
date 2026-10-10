@@ -9,13 +9,12 @@ import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import DeleteRecordButton from "@/components/records/DeleteRecordButton";
 import PageHeader from "@/components/ui/PageHeader";
 import DetailFormSkeleton from "@/components/ui/DetailFormSkeleton";
-import FieldResponsesTable from "@/components/operations/FieldResponsesTable";
+import TeamRosterManager from "@/components/teams/TeamRosterManager";
 import { deleteTeam } from "@/lib/api/records";
 import { cancelTeam, getTeam, transferLeadership, updateTeam } from "@/lib/api/teams";
 import { ApiError } from "@/lib/api/client";
 import { formatStatus, shortId } from "@/lib/permissions";
 import { useAuth } from "@/context/AuthProvider";
-import type { FieldResponse } from "@/types/api";
 
 export default function TeamDetailPage() {
   const params = useParams();
@@ -50,8 +49,8 @@ export default function TeamDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const members = Array.isArray(team?.members) ? (team.members as Record<string, unknown>[]) : [];
   const leader = team?.leader as Record<string, unknown> | undefined;
+  const canEditRoster = hasPermission("team-edit");
 
   return (
     <RequireAdmin>
@@ -74,7 +73,7 @@ export default function TeamDetailPage() {
         {!loading && !team && <p className="muted">Team not found.</p>}
         {!loading && team && (
           <>
-            <div className="card" style={{ maxWidth: 720, marginBottom: 16 }}>
+            <div className="card" style={{ marginBottom: 16 }}>
               <p className="muted">
                 {formatStatus(team.status)}
                 {team.mandatory_filled != null && team.required_member_count != null
@@ -145,30 +144,7 @@ export default function TeamDetailPage() {
 
             <div className="card">
               <h3>Roster</h3>
-              {members.length === 0 ? (
-                <p className="muted">No members on this team.</p>
-              ) : (
-                <div style={{ display: "grid", gap: 20 }}>
-                  {members.map((m) => (
-                    <div key={String(m.id)}>
-                      <p>
-                        <strong>{String(m.full_name || "Member")}</strong>
-                        {" · "}
-                        {formatStatus(m.role)}
-                        {" · "}
-                        {formatStatus(m.status)}
-                        {m.entry_source ? ` · ${formatStatus(m.entry_source)}` : ""}
-                      </p>
-                      <p className="muted">
-                        {String(m.phone || "—")}
-                        {m.contact_email ? ` · ${String(m.contact_email)}` : ""}
-                        {m.college_name ? ` · ${String(m.college_name)}` : ""}
-                      </p>
-                      <FieldResponsesTable responses={(m.field_responses || []) as FieldResponse[]} />
-                    </div>
-                  ))}
-                </div>
-              )}
+              <TeamRosterManager team={team} canEdit={canEditRoster} onUpdated={load} />
             </div>
           </>
         )}

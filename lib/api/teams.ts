@@ -41,3 +41,18 @@ export function transferLeadership(teamId: string, new_leader_profile_id: string
 export function cancelTeam(teamId: string) {
   return apiFetchData(`/admin/teams/${teamId}/cancel`, { method: "POST", auth: true });
 }
+
+export type AdminRosterAddPayload = {
+  role: "MEMBER" | "SUBSTITUTE";
+  full_name: string;
+  phone: string;
+  contact_email?: string;
+  college_name?: string;
+  department?: string;
+  year_of_study?: string;
+  field_responses?: { field_id: string; value: unknown }[];
+};
+
+export function addAdminRosterMember(teamId: string, body: AdminRosterAddPayload) {
+  return apiFetchData(`/admin/teams/${teamId}/roster`, { method: "POST", body, auth: true });
+}
