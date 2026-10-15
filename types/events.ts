@@ -78,6 +78,8 @@ export interface EventListItem {
   registration_open?: boolean;
   registration_availability?: RegistrationAvailability;
   spots_remaining?: number | null;
+  /** Master spreadsheet worksheet tab title (migration 0017). */
+  google_sheets_worksheet_title?: string | null;
   allow_individual?: boolean;
   registration_mode?: RegistrationMode | null;
   team_min_size: number;

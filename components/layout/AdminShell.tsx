@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthProvider";
-import { canReadEvents } from "@/lib/permissions";
+import { canEditEvents, canReadEvents } from "@/lib/permissions";
 import styles from "./AdminShell.module.css";
 
 type IconName =
@@ -17,6 +17,7 @@ type IconName =
   | "notifications"
   | "attendance"
   | "exports"
+  | "sheets"
   | "admins"
   | "profile";
 
@@ -62,6 +63,12 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/notifications", label: "Notifications", icon: "notifications", permission: "announcement" },
       { href: "/exports", label: "Exports", icon: "exports", permission: "export" },
+      {
+        href: "/google-sheets",
+        label: "Google Sheets",
+        icon: "sheets",
+        visible: ({ hasPermission }) => hasPermission("export") || canEditEvents(hasPermission),
+      },
     ],
   },
   {
@@ -84,6 +91,8 @@ const ICON_PATHS: Record<IconName, string> = {
   notifications: "M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9ZM13.73 21a2 2 0 0 1-3.46 0",
   attendance: "M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
   exports: "M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2",
+  sheets:
+    "M4 4h16v16H4V4Zm2 2v12h12V6H6Zm2 2h8v2H8V8Zm0 4h8v2H8v-2Zm0 4h5v2H8v-2Z",
   admins: "M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6l-8-4Z",
   profile: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
 };
