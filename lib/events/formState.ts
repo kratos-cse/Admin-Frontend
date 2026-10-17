@@ -14,6 +14,7 @@ export const CATEGORIES: EventCategory[] = [
   "SPARK",
   "ONLINE",
   "TITLE_EVENT",
+  "PROJECT_EXPO",
 ];
 
 const CATEGORY_LABELS: Record<EventCategory, string> = {
@@ -22,6 +23,7 @@ const CATEGORY_LABELS: Record<EventCategory, string> = {
   SPARK: "Spark",
   ONLINE: "Online",
   TITLE_EVENT: "Title Event",
+  PROJECT_EXPO: "Project Expo",
 };
 
 export function categoryLabel(category: string | null | undefined): string {

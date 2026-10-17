@@ -3,7 +3,13 @@
 export type EventVisibility = "PUBLISHED" | "UNPUBLISHED";
 export type EventRegistrationStatus = "OPEN" | "CLOSED" | "COMING_SOON";
 export type RegistrationAvailability = "OPEN" | "CLOSED" | "FULL" | "COMING_SOON";
-export type EventCategory = "TECHNICAL" | "PLAYGROUND" | "SPARK" | "ONLINE" | "TITLE_EVENT";
+export type EventCategory =
+  | "TECHNICAL"
+  | "PLAYGROUND"
+  | "SPARK"
+  | "ONLINE"
+  | "TITLE_EVENT"
+  | "PROJECT_EXPO";
 export type EventSlot = "MORNING" | "AFTERNOON" | "EVENING" | "FULL_DAY" | "MULTI_DAY";
 export type RegistrationMode = "INDIVIDUAL_ONLY" | "TEAM_ONLY" | "TEAM_OR_INDIVIDUAL";
 export type CapacityType = "PARTICIPANTS" | "TEAMS";
