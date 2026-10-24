@@ -10,7 +10,12 @@ import DeleteRecordButton from "@/components/records/DeleteRecordButton";
 import StatusBadge from "@/components/ui/StatusBadge";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import PageHeader from "@/components/ui/PageHeader";
-import { cancelRegistration, listRegistrations, updateRegistration } from "@/lib/api/registrations";
+import {
+  cancelRegistration,
+  listRegistrations,
+  revokeRegistrationConfirmation,
+  updateRegistration,
+} from "@/lib/api/registrations";
 import { deleteRegistration } from "@/lib/api/records";
 import { listEvents } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
@@ -31,6 +36,7 @@ function RegistrationsInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelId, setCancelId] = useState<string | null>(null);
+  const [revokeId, setRevokeId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -166,15 +172,30 @@ function RegistrationsInner() {
                         View
                       </Link>
                       {!isEventCoordinator && hasPermission("registration-edit") && (
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          onClick={() =>
-                            void updateRegistration(String(r.id), { status: "CONFIRMED" }).then(load).catch((e) => setError(e.message))
-                          }
-                        >
-                          Confirm
-                        </button>
+                        <>
+                          {String(r.status).toUpperCase() !== "CONFIRMED" && (
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm"
+                              onClick={() =>
+                                void updateRegistration(String(r.id), { status: "CONFIRMED" })
+                                  .then(load)
+                                  .catch((e) => setError(e.message))
+                              }
+                            >
+                              Confirm
+                            </button>
+                          )}
+                          {String(r.status).toUpperCase() === "CONFIRMED" && (
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => setRevokeId(String(r.id))}
+                            >
+                              Revoke confirm
+                            </button>
+                          )}
+                        </>
                       )}
                       {isSuperAdmin && (
                         <button type="button" className="btn btn-ghost btn-sm" onClick={() => setCancelId(String(r.id))}>
@@ -208,6 +229,27 @@ function RegistrationsInner() {
           Next
         </button>
       </div>
+      <ConfirmDialog
+        open={Boolean(revokeId)}
+        title="Revoke confirmation"
+        message={`Move registration ${revokeId} back to pending? Active QR codes will be deactivated; payments are not refunded.`}
+        confirmLabel="Revoke confirmation"
+        busy={busy}
+        onCancel={() => setRevokeId(null)}
+        onConfirm={async () => {
+          if (!revokeId) return;
+          setBusy(true);
+          try {
+            await revokeRegistrationConfirmation(revokeId);
+            setRevokeId(null);
+            await load();
+          } catch (err) {
+            setError(err instanceof ApiError ? err.message : "Revoke failed");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
       <ConfirmDialog
         open={Boolean(cancelId)}
         title="Cancel registration"

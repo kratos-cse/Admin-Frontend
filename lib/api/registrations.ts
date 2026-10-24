@@ -27,6 +27,13 @@ export function updateRegistration(registrationId: string, body: { status?: stri
   });
 }
 
+export function revokeRegistrationConfirmation(registrationId: string) {
+  return apiFetchData(`/admin/registrations/${registrationId}/revoke-confirmation`, {
+    method: "POST",
+    auth: true,
+  });
+}
+
 export function cancelRegistration(registrationId: string) {
   return apiFetchData(`/admin/registrations/${registrationId}/cancel`, {
     method: "POST",
