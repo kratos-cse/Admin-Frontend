@@ -10,6 +10,7 @@ import DetailFormSkeleton from "@/components/ui/DetailFormSkeleton";
 import StatusBadge from "@/components/ui/StatusBadge";
 import FieldResponsesTable from "@/components/operations/FieldResponsesTable";
 import RecoverCapturedPaymentButton from "@/components/operations/RecoverCapturedPaymentButton";
+import ResendConfirmationEmailButton from "@/components/operations/ResendConfirmationEmailButton";
 import { getRegistration } from "@/lib/api/registrations";
 import { ApiError } from "@/lib/api/client";
 import { formatAdminError } from "@/lib/errors/adminMessages";
@@ -96,6 +97,10 @@ export default function RegistrationDetailPage() {
                   </tbody>
                 </table>
               </div>
+              <ResendConfirmationEmailButton
+                registrationId={id}
+                registrationStatus={String(data.status || "")}
+              />
               {payment.id && data.status && payment.status ? (
                 <div style={{ marginTop: 16 }}>
                   <RecoverCapturedPaymentButton

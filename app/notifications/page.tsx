@@ -17,6 +17,12 @@ import {
   sendTestEmail,
 } from "@/lib/api/notifications";
 import { ApiError } from "@/lib/api/client";
+import {
+  previewEventConfirmationResend,
+  resendEventConfirmationEmails,
+  type EventConfirmationResendPreview,
+} from "@/lib/api/confirmationEmail";
+import { useAuth } from "@/context/AuthProvider";
 
 type FieldState = Record<string, string>;
 
@@ -43,6 +49,10 @@ export default function NotificationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [resendRegId, setResendRegId] = useState("");
+  const [eventResendPreview, setEventResendPreview] = useState<EventConfirmationResendPreview | null>(null);
+  const [eventResendConfirmOpen, setEventResendConfirmOpen] = useState(false);
+  const { hasPermission } = useAuth();
 
   const selectedTemplate = useMemo(
     () => templates.find((t) => t.id === templateId) ?? null,
@@ -276,7 +286,67 @@ export default function NotificationsPage() {
               Send campaign
             </button>
             {selectedTemplate?.preview_only && (
-              <p className="muted">This template is preview-only (sent automatically after payment).</p>
+              <div style={{ marginTop: 8 }}>
+                <p className="muted" style={{ marginBottom: 8 }}>
+                  Transactional confirmation is sent after payment. Resend the full branded confirmation (personal QR, receipts, WhatsApp) — not a generic campaign.
+                </p>
+                {hasPermission("notification") && eventId ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      disabled={busy !== null}
+                      onClick={() => {
+                        setBusy("event-resend-preview");
+                        setError(null);
+                        void previewEventConfirmationResend(eventId)
+                          .then(setEventResendPreview)
+                          .catch((err) => {
+                            setEventResendPreview(null);
+                            setError(err instanceof ApiError ? err.message : "Preview failed");
+                          })
+                          .finally(() => setBusy(null));
+                      }}
+                    >
+                      {busy === "event-resend-preview" ? "Loading…" : "Preview event resend count"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      disabled={busy !== null || !eventResendPreview?.eligible}
+                      onClick={() => setEventResendConfirmOpen(true)}
+                    >
+                      Resend confirmations for event
+                    </button>
+                  </div>
+                ) : null}
+                {eventResendPreview ? (
+                  <p className="muted">
+                    {eventResendPreview.deliverable_recipient_count} deliverable participant email(s) across{" "}
+                    {eventResendPreview.confirmed_registration_count} confirmed registration(s).
+                    {eventResendPreview.skipped_registration_count > 0
+                      ? ` ${eventResendPreview.skipped_registration_count} registration(s) skipped (missing email or QR).`
+                      : ""}
+                    {!eventResendPreview.eligible && eventResendPreview.reason ? ` ${eventResendPreview.reason}` : ""}
+                  </p>
+                ) : null}
+                <div className="field">
+                  <label htmlFor="resend-reg">Or resend one registration</label>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <input
+                      id="resend-reg"
+                      placeholder="Paste registration UUID"
+                      value={resendRegId}
+                      onChange={(e) => setResendRegId(e.target.value.trim())}
+                    />
+                    {resendRegId ? (
+                      <Link href={`/registrations/${resendRegId}`} className="btn btn-ghost btn-sm">
+                        Open registration → Resend
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
             )}
 
             {msg && <p className="muted">{msg}</p>}
@@ -352,6 +422,42 @@ export default function NotificationsPage() {
             </table>
           )}
         </div>
+
+        <ConfirmDialog
+          open={eventResendConfirmOpen}
+          title="Resend all confirmation emails for this event?"
+          message={
+            eventResendPreview
+              ? `Send the transactional confirmation email to ${eventResendPreview.deliverable_recipient_count} participant(s) for “${eventResendPreview.event_name}”? Each person receives their own QR and receipt links.`
+              : ""
+          }
+          busy={busy === "event-resend"}
+          confirmLabel="Resend all"
+          onConfirm={() => {
+            if (!eventId || !eventResendPreview?.eligible) {
+              setEventResendConfirmOpen(false);
+              return;
+            }
+            setBusy("event-resend");
+            setError(null);
+            const clientRequestId =
+              typeof crypto !== "undefined" && crypto.randomUUID
+                ? crypto.randomUUID()
+                : `event-resend-${Date.now()}`;
+            void resendEventConfirmationEmails(eventId, { client_request_id: clientRequestId })
+              .then((out) => {
+                setMsg(
+                  `Event confirmation resend: delivered ${out.delivered_count}, failed ${out.failed_count} (${out.registrations_processed} registrations).`,
+                );
+                setEventResendConfirmOpen(false);
+              })
+              .catch((err) => {
+                setError(err instanceof ApiError ? err.message : "Event resend failed");
+              })
+              .finally(() => setBusy(null));
+          }}
+          onCancel={() => setEventResendConfirmOpen(false)}
+        />
 
         <ConfirmDialog
           open={confirmOpen}
