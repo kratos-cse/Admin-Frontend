@@ -61,7 +61,7 @@ const GROUPS: NavGroup[] = [
   {
     title: "Comms & data",
     items: [
-      { href: "/notifications", label: "Notifications", icon: "notifications", permission: "announcement" },
+      { href: "/notifications", label: "Email Center", icon: "notifications", permission: "announcement" },
       { href: "/exports", label: "Exports", icon: "exports", permission: "export" },
       {
         href: "/google-sheets",
