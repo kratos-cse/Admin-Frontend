@@ -6,7 +6,8 @@ import { useParams } from "next/navigation";
 import AdminShell from "@/components/layout/AdminShell";
 import RequireAdmin from "@/components/layout/RequireAdmin";
 import PageHeader from "@/components/ui/PageHeader";
-import { registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
+import { registrationStatusLabel, slotLabel, visibilityLabel } from "@/lib/events/format";
+import { deriveSlotFromSchedule } from "@/lib/events/deriveSlot";
 import { getAdminEvent } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
 import { rosterSummary, type AdminEvent } from "@/types/events";
@@ -99,6 +100,10 @@ export default function EventPreviewPage() {
               }
             />
             <Row label="Venue" value={event.venue} />
+            <Row
+              label="Slot"
+              value={slotLabel(event.slot ?? deriveSlotFromSchedule(event.starts_at, event.ends_at))}
+            />
             <Row label="Coordinator" value={[event.coordinator, event.coord_contact].filter(Boolean).join(" · ")} />
             <Row label="QR check-in" value={rules.requires_qr_checkin ? "Required" : "Not required"} />
             {event.long_desc && (

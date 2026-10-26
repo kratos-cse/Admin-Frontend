@@ -3,6 +3,7 @@ import type {
   AdminEventCreateBody,
   CapacityType,
   EventCategory,
+  EventSlot,
   MemberRegistrationMode,
   RegistrationMode,
 } from "@/types/events";
@@ -94,6 +95,8 @@ export function normalizeTeamSizes(minRaw: string | number, maxRaw: string | num
   return { team_min_size, team_max_size };
 }
 
+export type EventSlotMode = "auto" | "manual";
+
 export type EventFormState = {
   name: string;
   tagline: string;
@@ -106,6 +109,8 @@ export type EventFormState = {
   whatsapp_group_link: string;
   starts_at: string;
   ends_at: string;
+  slot_mode: EventSlotMode;
+  slot: EventSlot;
   registration_mode: RegistrationMode;
   team_roster_style: TeamRosterStyle;
   team_min_size: string;
@@ -132,6 +137,8 @@ export function emptyEventForm(): EventFormState {
     whatsapp_group_link: "",
     starts_at: "",
     ends_at: "",
+    slot_mode: "auto",
+    slot: "FULL_DAY",
     registration_mode: "TEAM_ONLY",
     team_roster_style: "RANGE",
     team_min_size: "3",
@@ -200,6 +207,9 @@ export function formFromAdminEvent(ev: AdminEvent): EventFormState {
         ? subsFromRule
         : Math.max(0, sizes.team_max_size - sizes.team_min_size)
       : 0;
+  const derivedSlot = deriveSlotFromSchedule(ev.starts_at, ev.ends_at);
+  const storedSlot = (ev.slot as EventSlot | null) ?? derivedSlot;
+  const slot_mode: EventSlotMode = storedSlot === derivedSlot ? "auto" : "manual";
   return {
     name: ev.name || "",
     tagline: ev.tagline || "",
@@ -212,6 +222,8 @@ export function formFromAdminEvent(ev: AdminEvent): EventFormState {
     whatsapp_group_link: ev.whatsapp_group_link || "",
     starts_at: toLocalInput(ev.starts_at),
     ends_at: toLocalInput(ev.ends_at),
+    slot_mode,
+    slot: storedSlot,
     registration_mode: r?.registration_mode || "TEAM_OR_INDIVIDUAL",
     team_roster_style: style,
     team_min_size: String(sizes.team_min_size),
@@ -228,6 +240,11 @@ export function formFromAdminEvent(ev: AdminEvent): EventFormState {
 
 export function isTeamMode(mode: RegistrationMode): boolean {
   return mode === "TEAM_ONLY" || mode === "TEAM_OR_INDIVIDUAL";
+}
+
+function resolveFormSlot(form: EventFormState): EventSlot {
+  if (form.slot_mode === "manual") return form.slot;
+  return deriveSlotFromSchedule(fromLocalInput(form.starts_at), fromLocalInput(form.ends_at));
 }
 
 export function rosterPreview(form: EventFormState): string {
@@ -303,7 +320,7 @@ export function toCreateBody(form: EventFormState): AdminEventCreateBody {
     whatsapp_group_link: form.whatsapp_group_link.trim() || null,
     starts_at: fromLocalInput(form.starts_at),
     ends_at: fromLocalInput(form.ends_at),
-    slot: deriveSlotFromSchedule(fromLocalInput(form.starts_at), fromLocalInput(form.ends_at)),
+    slot: resolveFormSlot(form),
     registration_mode: form.registration_mode,
     ...roster,
     allow_team_invite_flow: team ? form.allow_team_invite_flow : false,
@@ -326,7 +343,7 @@ export function toDetailsPatch(form: EventFormState) {
     whatsapp_group_link: form.whatsapp_group_link.trim() || null,
     starts_at: fromLocalInput(form.starts_at),
     ends_at: fromLocalInput(form.ends_at),
-    slot: deriveSlotFromSchedule(fromLocalInput(form.starts_at), fromLocalInput(form.ends_at)),
+    slot: resolveFormSlot(form),
   };
 }
 

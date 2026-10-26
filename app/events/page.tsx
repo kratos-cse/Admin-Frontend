@@ -19,7 +19,8 @@ import {
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/context/AuthProvider";
 import { canControlEvents, canEditEvents } from "@/lib/permissions";
-import { registrationStatusLabel, visibilityLabel } from "@/lib/events/format";
+import { registrationStatusLabel, slotLabel, visibilityLabel } from "@/lib/events/format";
+import { deriveSlotFromSchedule } from "@/lib/events/deriveSlot";
 import { categoryLabel } from "@/lib/events/formState";
 import { rosterSummary, type EventListItem, type TeamRosterStyle } from "@/types/events";
 
@@ -138,7 +139,7 @@ export default function EventsPage() {
           </p>
         )}
         {loading ? (
-          <TableSkeleton columns={7} label="Loading events" />
+          <TableSkeleton columns={8} label="Loading events" />
         ) : items.length === 0 ? (
           <p className="muted">No events yet.</p>
         ) : (
@@ -148,6 +149,7 @@ export default function EventsPage() {
                 <tr>
                   <th>Name</th>
                   <th>Category</th>
+                  <th>Slot</th>
                   <th>Roster</th>
                   <th>Visibility</th>
                   <th>Registration</th>
@@ -162,6 +164,9 @@ export default function EventsPage() {
                       <Link href={`/events/${ev.id}`}>{ev.name}</Link>
                     </td>
                     <td>{categoryLabel(ev.category)}</td>
+                    <td>
+                      {slotLabel(ev.slot ?? deriveSlotFromSchedule(ev.starts_at, ev.ends_at))}
+                    </td>
                     <td>
                       {rosterSummary(
                         ev.required_member_count ?? ev.team_min_size,

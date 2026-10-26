@@ -12,7 +12,8 @@ import {
 } from "@/lib/events/formState";
 import RosterSizeFields from "@/components/events/RosterSizeFields";
 import { deriveSlotFromSchedule } from "@/lib/events/deriveSlot";
-import type { AdminEvent } from "@/types/events";
+import { EVENT_SLOT_OPTIONS, slotLabel } from "@/lib/events/format";
+import type { AdminEvent, EventSlot } from "@/types/events";
 import styles from "../editor.module.css";
 
 type StepProps = {
@@ -92,7 +93,33 @@ export function ScheduleVenueStep({ form, disabled, onChange }: StepProps) {
           <input id="ends_at" type="datetime-local" disabled={disabled} value={form.ends_at} onChange={(e) => set("ends_at", e.target.value)} />
         </Field>
       </div>
-      <p className={styles.hint}>Slot is auto-derived for the website: {slotPreview.replace(/_/g, " ")}</p>
+      <Field id="slot_mode" label="Website slot label">
+        <select
+          id="slot_mode"
+          disabled={disabled}
+          value={form.slot_mode}
+          onChange={(e) => set("slot_mode", e.target.value as EventFormState["slot_mode"])}
+        >
+          <option value="auto">Automatic (from start/end time)</option>
+          <option value="manual">Manual override</option>
+        </select>
+      </Field>
+      {form.slot_mode === "auto" ? (
+        <p className={styles.hint}>Derived slot: {slotLabel(slotPreview)}</p>
+      ) : (
+        <Field id="slot" label="Slot">
+          <select
+            id="slot"
+            disabled={disabled}
+            value={form.slot}
+            onChange={(e) => set("slot", e.target.value as EventSlot)}
+          >
+            {EVENT_SLOT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </Field>
+      )}
       <Field id="venue" label="Venue">
         <input id="venue" disabled={disabled} value={form.venue} onChange={(e) => set("venue", e.target.value)} />
       </Field>
@@ -197,10 +224,11 @@ type ReviewProps = StepProps & { event: AdminEvent | null };
 
 export function ReviewPublishStep({ form, event }: ReviewProps) {
   const summary = event?.config_summary;
-  const slot = deriveSlotFromSchedule(
+  const derivedSlot = deriveSlotFromSchedule(
     form.starts_at ? new Date(form.starts_at).toISOString() : null,
     form.ends_at ? new Date(form.ends_at).toISOString() : null,
   );
+  const displaySlot = form.slot_mode === "manual" ? form.slot : derivedSlot;
 
   return (
     <>
@@ -209,7 +237,10 @@ export function ReviewPublishStep({ form, event }: ReviewProps) {
         <div className={styles.summaryRow}><span className={styles.summaryLabel}>Name</span><span>{form.name || "—"}</span></div>
         <div className={styles.summaryRow}><span className={styles.summaryLabel}>Category</span><span>{categoryLabel(form.category)}</span></div>
         <div className={styles.summaryRow}><span className={styles.summaryLabel}>Venue</span><span>{form.venue || "—"}</span></div>
-        <div className={styles.summaryRow}><span className={styles.summaryLabel}>Slot (auto)</span><span>{slot.replace(/_/g, " ")}</span></div>
+        <div className={styles.summaryRow}>
+          <span className={styles.summaryLabel}>Slot</span>
+          <span>{slotLabel(displaySlot)}{form.slot_mode === "manual" ? " (manual)" : ""}</span>
+        </div>
         <div className={styles.summaryRow}><span className={styles.summaryLabel}>Registration</span><span>{rosterPreview(form)}</span></div>
         <div className={styles.summaryRow}><span className={styles.summaryLabel}>Fee</span><span>{form.fee ? `₹${form.fee}` : "Free"}</span></div>
         {summary ? (
