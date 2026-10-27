@@ -23,6 +23,8 @@ import {
   type EventConfirmationResendPreview,
 } from "@/lib/api/confirmationEmail";
 import { useAuth } from "@/context/AuthProvider";
+import ResendConfirmationEmailButton from "@/components/operations/ResendConfirmationEmailButton";
+import Link from "next/link";
 
 type FieldState = Record<string, string>;
 
@@ -53,6 +55,7 @@ export default function NotificationsPage() {
   const [eventResendPreview, setEventResendPreview] = useState<EventConfirmationResendPreview | null>(null);
   const [eventResendConfirmOpen, setEventResendConfirmOpen] = useState(false);
   const { hasPermission } = useAuth();
+  const canResendComms = hasPermission("notification") || hasPermission("announcement");
 
   const selectedTemplate = useMemo(
     () => templates.find((t) => t.id === templateId) ?? null,
@@ -185,6 +188,91 @@ export default function NotificationsPage() {
           title="Email Center"
           description="Preview branded templates, test SMTP delivery, and send campaigns to confirmed participants."
         />
+
+        {canResendComms ? (
+          <div className="card" style={{ marginBottom: 20, borderColor: "var(--border, #cbd5e1)" }}>
+            <h3 style={{ marginTop: 0 }}>Resend registration confirmation emails</h3>
+            <p className="muted" style={{ marginBottom: 16 }}>
+              Payment confirmations are not sent from &quot;Send campaign&quot; (that template is preview-only). Use this section to
+              resend the real confirmation email with each person&apos;s own QR, receipt links, and WhatsApp CTA.
+            </p>
+            <div className="field" style={{ maxWidth: 420 }}>
+              <label htmlFor="resend-event-top">Event (all confirmed participants)</label>
+              <select
+                id="resend-event-top"
+                value={eventId}
+                onChange={(e) => {
+                  setEventId(e.target.value);
+                  setEventResendPreview(null);
+                }}
+              >
+                <option value="">Select event</option>
+                {events.map((ev) => (
+                  <option key={String(ev.id)} value={String(ev.id)}>
+                    {String(ev.name)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {eventId ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  disabled={busy !== null}
+                  onClick={() => {
+                    setBusy("event-resend-preview");
+                    setError(null);
+                    void previewEventConfirmationResend(eventId)
+                      .then(setEventResendPreview)
+                      .catch((err) => {
+                        setEventResendPreview(null);
+                        setError(err instanceof ApiError ? err.message : "Preview failed");
+                      })
+                      .finally(() => setBusy(null));
+                  }}
+                >
+                  {busy === "event-resend-preview" ? "Loading…" : "1. Check how many will receive email"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  disabled={busy !== null || !eventResendPreview?.eligible}
+                  onClick={() => setEventResendConfirmOpen(true)}
+                >
+                  2. Resend confirmations for entire event
+                </button>
+              </div>
+            ) : null}
+            {eventResendPreview ? (
+              <p className="muted" style={{ marginBottom: 16 }}>
+                <strong>{eventResendPreview.deliverable_recipient_count}</strong> participant email(s) ready across{" "}
+                {eventResendPreview.confirmed_registration_count} confirmed registration(s).
+                {!eventResendPreview.eligible && eventResendPreview.reason ? ` ${eventResendPreview.reason}` : ""}
+              </p>
+            ) : null}
+            <div className="field" style={{ maxWidth: 520 }}>
+              <label htmlFor="resend-reg-top">Or one registration</label>
+              <p className="muted" style={{ fontSize: 13, margin: "4px 0 8px" }}>
+                Paste a registration ID, or open{" "}
+                <Link href="/registrations">Registrations</Link> → pick a row → use the button on the detail page.
+              </p>
+              <input
+                id="resend-reg-top"
+                placeholder="Registration UUID"
+                value={resendRegId}
+                onChange={(e) => setResendRegId(e.target.value.trim())}
+              />
+            </div>
+            {resendRegId.length >= 8 ? (
+              <ResendConfirmationEmailButton registrationId={resendRegId} registrationStatus="CONFIRMED" />
+            ) : null}
+          </div>
+        ) : (
+          <p className="muted card" style={{ marginBottom: 20 }}>
+            Resending confirmation emails requires the <strong>announcement</strong> or <strong>notification</strong> admin permission.
+          </p>
+        )}
 
         <div style={{ display: "grid", gap: 20, gridTemplateColumns: "minmax(280px, 400px) 1fr" }}>
           <div className="card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>

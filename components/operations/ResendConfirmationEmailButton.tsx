@@ -30,9 +30,8 @@ export default function ResendConfirmationEmailButton({
   const [memberScope, setMemberScope] = useState<"all_members" | "member">("all_members");
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
 
-  if (!hasPermission("notification")) return null;
-
-  const showButton = registrationStatus === "CONFIRMED";
+  const canResend = hasPermission("notification") || hasPermission("announcement");
+  if (!canResend) return null;
 
   async function loadPreview() {
     setBusy(true);
@@ -78,8 +77,6 @@ export default function ResendConfirmationEmailButton({
       setBusy(false);
     }
   }
-
-  if (!showButton && !result) return null;
 
   const recipients =
     preview?.registration_type === "TEAM" && memberScope === "member" && selectedMemberId
