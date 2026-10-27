@@ -9,6 +9,7 @@ import styles from "./AdminShell.module.css";
 
 type IconName =
   | "dashboard"
+  | "leaderboard"
   | "participants"
   | "registrations"
   | "events"
@@ -36,6 +37,10 @@ const GROUPS: NavGroup[] = [
   {
     title: "Overview",
     items: [{ href: "/", label: "Dashboard", icon: "dashboard", permission: "dashboard" }],
+  },
+  {
+    title: "Competition",
+    items: [{ href: "/leaderboard", label: "Leaderboard & points", icon: "leaderboard", permission: "leaderboard-manage" }],
   },
   {
     title: "Operations",
@@ -81,6 +86,7 @@ const GROUPS: NavGroup[] = [
 ];
 
 const ICON_PATHS: Record<IconName, string> = {
+  leaderboard: "M8 21V10H3v11m5 0h8m-8 0V3h8v18m0 0h5V14h-5",
   dashboard: "M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z",
   participants:
     "M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0ZM4 21a8 8 0 0 1 16 0",
