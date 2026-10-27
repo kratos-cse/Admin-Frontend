@@ -48,6 +48,7 @@ type FetchOptions = {
   body?: unknown;
   token?: string | null;
   auth?: boolean;
+  signal?: AbortSignal;
 };
 
 function unwrapMessage(data: unknown, fallback: string): string {
@@ -67,7 +68,7 @@ function unwrapMessage(data: unknown, fallback: string): string {
 }
 
 export async function apiFetch<T = unknown>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { method = "GET", body, token, auth = false } = options;
+  const { method = "GET", body, token, auth = false, signal } = options;
   const url = path.startsWith("http")
     ? path
     : `/api/v1${path.startsWith("/") ? path : `/${path}`}`;
@@ -85,8 +86,10 @@ export async function apiFetch<T = unknown>(path: string, options: FetchOptions 
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
       cache: method === "GET" ? "no-store" : "default",
+      signal,
     });
   } catch (err) {
+    if (signal?.aborted) throw err;
     throw new ApiError({
       status: 0,
       code: "NETWORK",

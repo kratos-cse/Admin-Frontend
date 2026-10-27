@@ -1,0 +1,40 @@
+name: Leaderboard checks
+
+on:
+  pull_request:
+    paths:
+      - 'app/leaderboard/**'
+      - 'components/leaderboard/**'
+      - 'components/layout/**'
+      - 'context/AuthProvider.tsx'
+      - 'lib/api/client.ts'
+      - 'lib/api/leaderboard.ts'
+      - 'lib/leaderboard.ts'
+      - 'lib/permissions.ts'
+      - 'types/leaderboard.ts'
+      - 'tests/leaderboard.test.cjs'
+      - 'package*.json'
+      - 'next.config.js'
+      - '.github/workflows/leaderboard-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      API_BASE_URL: 'https://api.kratoseec.com'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:leaderboard
+      - run: npm run lint
+      - run: npx tsc --noEmit --incremental false
+      - run: npm run build

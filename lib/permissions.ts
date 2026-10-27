@@ -1,6 +1,7 @@
 /** Known permission keys from backend — used for role UI and frontend gates. */
 export const PERMISSION_CATALOG: { key: string; label: string; group: string }[] = [
   { key: "dashboard", label: "Dashboard", group: "Core" },
+  { key: "leaderboard-manage", label: "Manage leaderboard and points", group: "Competition" },
   { key: "event-read", label: "Read events", group: "Events" },
   { key: "event-edit", label: "Edit events", group: "Events" },
   { key: "event-control", label: "Event lifecycle controls", group: "Events" },

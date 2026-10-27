@@ -1,0 +1,60 @@
+.notice { min-height: 1.5rem; margin-bottom: 8px; color: var(--ok); }
+.tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
+.tabs button { flex-shrink: 0; min-height: 44px; padding: 10px 12px; background: transparent; border: 0; border-bottom: 2px solid transparent; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+.tabs button[data-state="active"] { color: var(--text); border-bottom-color: var(--accent); }
+.tabs button:disabled { opacity: .5; cursor: wait; }
+.tabs button:hover:not(:disabled) { background: var(--bg-hover); }
+.panel { min-width: 0; }
+.eventField { display: grid; gap: 6px; min-width: 0; width: 100%; }
+.eventField label, .addForm label { font-size: .85rem; font-weight: 600; }
+.eventField select { width: 100%; }
+.addForm { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+.addForm label { width: 100%; }
+.addForm input { flex: 1; min-width: 150px; }
+.help { font-size: .9rem; color: var(--text-muted); max-width: 85ch; margin-bottom: 18px; }
+.collegeName { text-align: left; overflow-wrap: anywhere; font-weight: 600; text-transform: none !important; letter-spacing: normal !important; background: transparent !important; }
+.scoreInput { display: grid; gap: 4px; text-align: left; }
+.scoreInput input { min-width: 100px; }
+.scoreInput small { font-size: .78rem; }
+.errorText { color: var(--danger); }
+.place { display: inline-flex; font-weight: 600; white-space: nowrap; }
+.podiumPlace { color: var(--accent-ink); }
+.boardToolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 20px; }
+.boardToolbar p { font-size: .85rem; }
+.podium { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
+.podiumEntry { padding: 20px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.podiumEntry h2 { font-size: 1rem; line-height: 1.45; overflow-wrap: anywhere; }
+.podiumRank { color: var(--accent-ink); font-size: .85rem; font-weight: 600; margin-bottom: 8px; }
+.podiumPoints { font-size: 1.75rem; font-variant-numeric: tabular-nums; margin-top: 12px; }
+.podiumPoints span { color: var(--text-muted); font-size: .85rem; }
+.number { font-variant-numeric: tabular-nums; text-align: right; }
+.breakdown { list-style: none; margin-top: 10px; display: grid; gap: 8px; min-width: 200px; }
+.breakdown li { display: flex; justify-content: space-between; gap: 12px; font-size: .85rem; }
+.breakdown b { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.standingsTable summary { cursor: pointer; font-weight: 600; }
+.actor { font-family: var(--font-mono); font-size: .78rem !important; overflow-wrap: anywhere; }
+.voided { color: var(--text-muted); }
+.confirmDialog { position: fixed; z-index: 101; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100% - 32px)); }
+.confirmDialog h2 { font-size: 1.15rem; margin-bottom: 12px; }
+@media (max-width: 719px) {
+  .awardTable tbody th, .standingsTable tbody th { display: block; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .awardTable td > input, .scoreInput { width: 100%; min-width: 0; }
+  .awardTable td { align-items: start; }
+  .standingsTable details { text-align: left; }
+}
+@media (min-width: 640px) {
+  .eventField { width: min(360px, 100%); }
+  .addForm label { width: auto; }
+  .addForm input { flex: 0 1 340px; }
+  .podium { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+}
+@media (min-width: 720px) {
+  .awardTable { min-width: 800px !important; }
+  .awardTable tbody th, .standingsTable tbody th { padding: 14px; border-bottom: 1px solid var(--border); font-size: .95rem; }
+  .awardTable td:nth-child(2) { min-width: 150px; }
+  .awardTable td:nth-child(4) { min-width: 240px; }
+  .standingsTable td.number { text-align: right; }
+  .historyTable { min-width: 1000px !important; }
+  .historyTable td { max-width: 280px; }
+  .historyTable td.number { text-align: right; }
+}
