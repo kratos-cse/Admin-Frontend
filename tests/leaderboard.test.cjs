@@ -75,6 +75,41 @@ test("college create and live-profile import are authenticated mutations", async
   assert.ok(requests.every(({ options }) => options.method === "POST" && options.headers.Authorization === "Bearer test-user-jwt"));
 });
 
+test("college sync completes the profile import before reading the current events and colleges", async () => {
+  const requests = [];
+  let finishImport;
+  const imported = new Promise((resolve) => { finishImport = resolve; });
+  const college = { id: "new-college", name: "Newly Registered College", is_active: true };
+  const controller = new AbortController();
+  const { api } = loadModules(async (url, options) => {
+    requests.push(url);
+    assert.equal(options.signal, controller.signal);
+    assert.equal(options.headers.Authorization, "Bearer test-user-jwt");
+    if (url.endsWith("/colleges/import")) {
+      await imported;
+      return response({ created: 1, skipped: 0, names: [college.name] });
+    }
+    return response(url.endsWith("/colleges") ? [college] : [{ id: "event", name: "Code Rush" }]);
+  });
+  const sync = api.syncLeaderboardMetadata(controller.signal);
+  assert.deepEqual(requests, ["/api/v1/admin/leaderboard/colleges/import"]);
+  finishImport();
+  const result = await sync;
+  assert.equal(result.colleges[0].name, college.name);
+  assert.equal(result.events[0].id, "event");
+  assert.equal(requests.length, 3);
+});
+
+test("failed automatic imports surface their error without reading stale metadata or writing scores", async () => {
+  const requests = [];
+  const { api, client } = loadModules(async (url) => {
+    requests.push(url);
+    return response({ detail: "Not allowed" }, 403);
+  });
+  await assert.rejects(api.syncLeaderboardMetadata(), (error) => error instanceof client.ApiError && error.status === 403);
+  assert.deepEqual(requests, ["/api/v1/admin/leaderboard/colleges/import"]);
+});
+
 test("API conflicts retain their status and explain review/retry", async () => {
   const { api, helpers, client } = loadModules(async () => response({ error: { code: "CONFLICT", message: "Someone else changed this award." } }, 409));
   await assert.rejects(api.awardPoints("e", "c", 10, null), (error) => {

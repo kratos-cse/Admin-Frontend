@@ -7,8 +7,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useAuth } from "@/context/AuthProvider";
 import {
-  awardPoints, createLeaderboardCollege, importLeaderboardColleges, listLeaderboardColleges,
-  listLeaderboardEvents, voidPoints,
+  awardPoints, createLeaderboardCollege, syncLeaderboardMetadata, voidPoints,
 } from "@/lib/api/leaderboard";
 import { ApiError } from "@/lib/api/client";
 import { leaderboardError, ordinal, parsePoints } from "@/lib/leaderboard";
@@ -101,28 +100,61 @@ export default function LeaderboardConsole() {
   const [clearRow, setClearRow] = useState<LeaderboardRow | null>(null);
   const eventId = tab === "award" ? awardEvent : tab === "board" ? boardEvent : historyEvent;
   const feed = useLeaderboardFeed(tab, eventId, tab === "history" ? historyCollege : "", revision);
+  const syncDisabled = Boolean(accessError || feed.accessDenied);
 
   useEffect(() => {
-    const controller = new AbortController();
+    if (syncDisabled) return;
+    let controller: AbortController | undefined;
     let disposed = false;
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    let inFlight = false;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     setMetadataLoading(true);
-    setMetadataError(null);
-    Promise.all([listLeaderboardEvents(controller.signal), listLeaderboardColleges(controller.signal)])
-      .then(([nextEvents, nextColleges]) => {
+
+    async function sync() {
+      if (disposed || stopped || inFlight || document.hidden) return;
+      inFlight = true;
+      const requestController = new AbortController();
+      controller = requestController;
+      const timeout = setTimeout(() => requestController.abort(), 15000);
+      try {
+        const { events: nextEvents, colleges: nextColleges } = await syncLeaderboardMetadata(requestController.signal);
         if (disposed) return;
         setEvents(nextEvents);
         setColleges(nextColleges);
         setAwardEvent((previous) => nextEvents.some((item) => item.id === previous) ? previous : nextEvents[0]?.id ?? "");
-      })
-      .catch((error: unknown) => {
+        setMetadataError(null);
+        setRevision((previous) => previous + 1);
+      } catch (error) {
         if (disposed) return;
-        setMetadataError(controller.signal.aborted ? "Loading events and colleges timed out. Refresh to retry." : leaderboardError(error));
-        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) setAccessError(leaderboardError(error));
-      })
-      .finally(() => { clearTimeout(timeout); if (!disposed) setMetadataLoading(false); });
-    return () => { disposed = true; clearTimeout(timeout); controller.abort(); };
-  }, [metadataRevision]);
+        const status = error instanceof ApiError ? error.status : 0;
+        stopped = status === 401 || status === 403 || status === 404;
+        setMetadataError(requestController.signal.aborted ? "College sync timed out. Existing data is still shown; refresh or wait for the next sync." : leaderboardError(error));
+        if (status === 401 || status === 403) setAccessError(leaderboardError(error));
+      } finally {
+        clearTimeout(timeout);
+        inFlight = false;
+        if (!disposed) {
+          setMetadataLoading(false);
+          if (!stopped && !document.hidden) timer = setTimeout(sync, 30000);
+        }
+      }
+    }
+
+    function visibilityChanged() {
+      clearTimeout(timer);
+      if (!document.hidden) void sync();
+    }
+
+    void sync();
+    document.addEventListener("visibilitychange", visibilityChanged);
+    return () => {
+      disposed = true;
+      clearTimeout(timer);
+      controller?.abort();
+      document.removeEventListener("visibilitychange", visibilityChanged);
+    };
+  }, [metadataRevision, syncDisabled]);
 
   function reload() {
     setRevision((previous) => previous + 1);
@@ -146,10 +178,6 @@ export default function LeaderboardConsole() {
     } finally {
       setBusy(false);
     }
-  }
-
-  async function importColleges() {
-    await mutate(importLeaderboardColleges, "College import completed. Existing colleges were kept; new names are now available.");
   }
 
   async function addCollege(event: FormEvent) {
@@ -187,15 +215,14 @@ export default function LeaderboardConsole() {
             <div className={styles.eventField}><label htmlFor="award-event">Event</label><select id="award-event" value={awardEvent} disabled={busy || metadataLoading} onChange={(event) => setAwardEvent(event.target.value)}>
               {!events.length && <option value="">No events available</option>}{eventOptions}
             </select></div>
-            <button type="button" className="btn btn-ghost" disabled={busy || metadataLoading || Boolean(metadataError)} onClick={() => void importColleges()}>{busy ? "Working…" : "Import colleges from registrations"}</button>
           </div>
           <form className={styles.addForm} onSubmit={(event) => void addCollege(event)}>
             <label htmlFor="college-name">Add a college</label>
             <input id="college-name" value={collegeName} maxLength={200} required placeholder="College name" disabled={busy || Boolean(metadataError)} onChange={(event) => setCollegeName(event.target.value)} />
             <button type="submit" className="btn btn-ghost" disabled={busy || !collegeName.trim() || Boolean(metadataError)}>Add college</button>
           </form>
-          <p className={styles.help}>Each save replaces this college’s score and note for the selected event. Earlier awards stay in History. Placement comes from points; ties share a place.</p>
-          {firstLoad ? <TableSkeleton columns={5} label="Loading event scores" /> : !metadataError && !feed.error && !events.length ? <div className="empty-state">No events yet. Create an event in the Events page first.</div> : board && !board.rows.length ? <div className="empty-state">No active colleges yet. Import colleges from registrations or add one above.</div> : board && (
+          <p className={styles.help}>Colleges stay in sync with registrations automatically. Each save replaces this college’s score and note for the selected event. Earlier awards stay in History. Placement comes from points; ties share a place.</p>
+          {firstLoad ? <TableSkeleton columns={5} label="Loading event scores" /> : !metadataError && !feed.error && !events.length ? <div className="empty-state">No events yet. Create an event in the Events page first.</div> : board && !board.rows.length ? <div className="empty-state">No active colleges yet. Colleges appear automatically from registrations, or you can add one above.</div> : board && (
             <div className="table-wrap"><table className={`data ${styles.awardTable}`}><caption className="sr-only">College points for {events.find((event) => event.id === awardEvent)?.name}</caption>
               <thead><tr><th scope="col">College</th><th scope="col">Points</th><th scope="col">Placement</th><th scope="col">New note</th><th scope="col">Actions</th></tr></thead>
               <tbody>{board.rows.map((row) => <AwardRow key={`${awardEvent}:${row.college_id}`} row={row} eventId={awardEvent} busy={busy}
@@ -214,7 +241,7 @@ export default function LeaderboardConsole() {
             {board.podium.length > 0 && <div className={styles.podium} aria-label="Podium">{board.podium.map((row) => <article key={row.college_id} className={styles.podiumEntry}>
               <p className={styles.podiumRank}>{ordinal(row.rank)} place</p><h2>{row.college}</h2><p className={styles.podiumPoints}>{row.total_points.toLocaleString()} <span>pts</span></p>
             </article>)}</div>}
-            {!board.rows.length ? <div className="empty-state">No active colleges yet. Import colleges from the Award points tab.</div> : <div className="table-wrap"><table className={`data ${styles.standingsTable}`}>
+            {!board.rows.length ? <div className="empty-state">No active colleges yet. Colleges appear automatically from registrations.</div> : <div className="table-wrap"><table className={`data ${styles.standingsTable}`}>
               <caption className="sr-only">{boardEvent ? "Event standings" : "Overall college standings"}</caption>
               <thead><tr><th scope="col">Rank</th><th scope="col">College</th><th scope="col">Points</th><th scope="col">Events scored</th><th scope="col">Breakdown</th></tr></thead>
               <tbody>{board.rows.map((row) => <tr key={row.college_id}>
@@ -232,7 +259,7 @@ export default function LeaderboardConsole() {
             <div className={styles.eventField}><label htmlFor="history-college">College</label><select id="history-college" value={historyCollege} disabled={metadataLoading} onChange={(event) => setHistoryCollege(event.target.value)}><option value="">All colleges</option>{colleges.map((college) => <option key={college.id} value={college.id}>{college.name}{college.is_active ? "" : " (inactive)"}</option>)}</select></div>
           </div>
           <p className={styles.help}>Latest {feed.awards.length} awards (up to 500), newest first. Filter by event or college to narrow the history. Voided awards remain recorded.</p>
-          {feed.loading ? <TableSkeleton columns={7} label="Loading award history" /> : !feed.error && !feed.awards.length ? <div className="empty-state">No awards for this selection. Saved awards and corrections will appear here.</div> : feed.awards.length > 0 && <div className="table-wrap"><table className={`data ${styles.historyTable}`}>
+          {feed.loading && !feed.updatedAt ? <TableSkeleton columns={7} label="Loading award history" /> : !feed.error && !feed.awards.length ? <div className="empty-state">No awards for this selection. Saved awards and corrections will appear here.</div> : feed.awards.length > 0 && <div className="table-wrap"><table className={`data ${styles.historyTable}`}>
             <caption className="sr-only">Award history</caption><thead><tr><th scope="col">Created</th><th scope="col">Event / college</th><th scope="col">Points</th><th scope="col">Current placement</th><th scope="col">Note</th><th scope="col">Awarded by</th><th scope="col">Status</th></tr></thead>
             <tbody>{feed.awards.map((award) => <tr key={award.id} className={award.voided_at ? styles.voided : ""}>
               <td data-label="Created"><time dateTime={award.created_at ?? undefined}>{timestamp(award.created_at)}</time></td>

@@ -28,8 +28,14 @@ export function createLeaderboardCollege(name: string) {
   return apiFetchData<LeaderboardCollege>(`${BASE}/colleges`, { method: "POST", body: { name }, auth: true });
 }
 
-export function importLeaderboardColleges() {
-  return apiFetchData<CollegeImport>(`${BASE}/colleges/import`, { method: "POST", auth: true });
+export function importLeaderboardColleges(signal?: AbortSignal) {
+  return apiFetchData<CollegeImport>(`${BASE}/colleges/import`, { method: "POST", auth: true, signal });
+}
+
+export async function syncLeaderboardMetadata(signal?: AbortSignal) {
+  await importLeaderboardColleges(signal);
+  const [events, colleges] = await Promise.all([listLeaderboardEvents(signal), listLeaderboardColleges(signal)]);
+  return { events, colleges };
 }
 
 export function awardPoints(eventId: string, collegeId: string, points: number, note: string | null) {

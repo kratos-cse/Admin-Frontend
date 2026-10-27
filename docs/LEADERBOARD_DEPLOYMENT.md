@@ -28,7 +28,7 @@ npm run build
 npm start
 ```
 
-Verify the deployed rewrite reaches the intended API and preserves the bearer token. Sign in with a real permitted admin, import colleges from registrations, review spelling variants, and select a real event. Import is an explicit action; new participant profiles do not automatically create leaderboard colleges. Add approved results only. Scores replace the prior event/college award, including its note; they are not increments. Clear voids a score while retaining history.
+Verify the deployed rewrite reaches the intended API and preserves the bearer token. Sign in with a real permitted admin, review the automatically synced college names for spelling variants, and select a real event. The page uses the existing idempotent college import on opening, every 30 seconds while visible, and when returning to the tab. It then reloads events, colleges and the current scores/history without clearing unsaved row drafts. This is additive synchronization from participant profiles while the admin page is open; it does not rename, delete or reactivate existing colleges. There is no manual search/import step. Add approved results only. Scores replace the prior event/college award, including its note; they are not increments. Clear voids a score while retaining history.
 
 Confirm another authorized browser receives saved standings within the next successful three-second polling cycle. Check ties, zero points, correction/void history, empty states and denied/expired sessions. Polling pauses when the document is hidden and stops on authorization failures. History is explicitly limited to the latest 500 matching awards because the backend does not expose pagination.
 
