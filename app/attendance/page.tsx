@@ -51,7 +51,23 @@ export default function AttendancePage() {
   return (
     <RequireAdmin>
       <AdminShell>
-        <PageHeader eyebrow="Operations" title="Attendance" description="Checkpoints and scan activity for each event." />
+        <PageHeader
+          eyebrow="Operations"
+          title="Attendance"
+          description="Checkpoints and scan activity. Check people in with the standalone QR scanner."
+          actions={
+            process.env.NEXT_PUBLIC_QR_SCANNER_URL ? (
+              <a
+                className="btn btn-primary"
+                href={process.env.NEXT_PUBLIC_QR_SCANNER_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open QR scanner
+              </a>
+            ) : null
+          }
+        />
         <div className="toolbar">
           <select value={eventId} onChange={(e) => setEventId(e.target.value)}>
             <option value="">All events</option>
