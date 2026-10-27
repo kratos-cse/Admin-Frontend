@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Symposium Championship Trophy — Leaderboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="leaderboard-root" id="leaderboardRoot">
+    <!-- Top Action & Title Bar (NO navbar / NO other pages) -->
+    <header class="leaderboard-header">
+      <div class="header-content">
+        <div class="title-group">
+          <div class="kicker">
+            <span class="live-dot"></span>
+            <span>Live Standings</span>
+          </div>
+          <h1 class="main-title">Symposium Championship Leaderboard</h1>
+          <p class="subtitle" id="lastUpdatedSubtitle">
+            Overall institutional trophy standings, points tally, and winning teams across all events.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Quick Stats Metric Cards -->
+    <section class="stats-container">
+      <div class="stat-card">
+        <span class="stat-label">Institutions Competing</span>
+        <span class="stat-value" id="statColleges">10</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Total Points Awarded</span>
+        <span class="stat-value" id="statPoints">2,740 pts</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Winning Teams Total</span>
+        <span class="stat-value" id="statTeams">74 Teams</span>
+      </div>
+      <div class="stat-card stat-leader">
+        <span class="stat-label">Current 1st Leader</span>
+        <span class="stat-value highlight-gold" id="statLeader">PSG Tech</span>
+      </div>
+    </section>
+
+    <!-- Grand Top 3 Podium -->
+    <section class="podium-section">
+      <div class="podium-title-area">
+        <span class="podium-kicker">Overall Trophy Standings</span>
+        <h2 class="podium-heading">🏆 Top 3 Podium</h2>
+      </div>
+
+      <div class="podium-grid" id="podiumGrid">
+        <!-- Rendered dynamically by app.js: 2nd (Silver), 1st (Gold, Center Elevated), 3rd (Bronze) -->
+      </div>
+    </section>
+
+    <!-- Complete Standings (#4 and Below) -->
+    <section class="table-section">
+      <div class="table-toolbar">
+        <div>
+          <h2 class="table-title">Complete Institutional Standings</h2>
+          <span class="table-subtitle" id="tableCountText">Showing all participating colleges</span>
+        </div>
+        <div class="search-box">
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="🔍 Search college name..."
+            oninput="handleSearch()"
+          />
+        </div>
+      </div>
+
+      <div class="standings-list" id="standingsList">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
