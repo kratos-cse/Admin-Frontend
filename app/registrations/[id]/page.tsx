@@ -9,8 +9,12 @@ import PageHeader from "@/components/ui/PageHeader";
 import DetailFormSkeleton from "@/components/ui/DetailFormSkeleton";
 import StatusBadge from "@/components/ui/StatusBadge";
 import FieldResponsesTable from "@/components/operations/FieldResponsesTable";
+import ConfirmOfflinePaymentButton, {
+  OfflinePaymentSuccessBanner,
+} from "@/components/operations/ConfirmOfflinePaymentButton";
 import RecoverCapturedPaymentButton from "@/components/operations/RecoverCapturedPaymentButton";
 import ResendConfirmationEmailButton from "@/components/operations/ResendConfirmationEmailButton";
+import type { ConfirmOfflinePaymentResult } from "@/lib/api/registrations";
 import { getRegistration } from "@/lib/api/registrations";
 import { ApiError } from "@/lib/api/client";
 import { formatAdminError } from "@/lib/errors/adminMessages";
@@ -28,6 +32,7 @@ export default function RegistrationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recoverError, setRecoverError] = useState<string | null>(null);
+  const [offlineSuccess, setOfflineSuccess] = useState<ConfirmOfflinePaymentResult | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +102,20 @@ export default function RegistrationDetailPage() {
                   </tbody>
                 </table>
               </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
+                <ConfirmOfflinePaymentButton
+                  registrationId={id}
+                  participantLabel={String(participant.full_name || teamObj.name || "")}
+                  registrationStatus={String(data.status || "")}
+                  onConfirmed={(result) => {
+                    setOfflineSuccess(result);
+                    setRecoverError(null);
+                    getRegistration(id).then((detail) => setData(detail as Record<string, unknown>));
+                  }}
+                  onError={(msg) => setRecoverError(msg)}
+                />
+              </div>
+              {offlineSuccess ? <OfflinePaymentSuccessBanner result={offlineSuccess} /> : null}
               <ResendConfirmationEmailButton
                 registrationId={id}
                 registrationStatus={String(data.status || "")}

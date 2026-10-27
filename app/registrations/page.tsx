@@ -14,8 +14,8 @@ import {
   cancelRegistration,
   listRegistrations,
   revokeRegistrationConfirmation,
-  updateRegistration,
 } from "@/lib/api/registrations";
+import ConfirmOfflinePaymentButton from "@/components/operations/ConfirmOfflinePaymentButton";
 import { deleteRegistration } from "@/lib/api/records";
 import { listEvents } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
@@ -173,18 +173,19 @@ function RegistrationsInner() {
                       </Link>
                       {!isEventCoordinator && hasPermission("registration-edit") && (
                         <>
-                          {String(r.status).toUpperCase() !== "CONFIRMED" && (
-                            <button
-                              type="button"
+                          {String(r.status).toUpperCase() !== "CONFIRMED" &&
+                            String(r.status).toUpperCase() !== "CANCELLED" && (
+                            <ConfirmOfflinePaymentButton
+                              registrationId={String(r.id)}
+                              participantLabel={String(
+                                participant?.full_name || r.participant_name || shortId(r.id)
+                              )}
+                              registrationStatus={String(r.status || "")}
                               className="btn btn-ghost btn-sm"
-                              onClick={() =>
-                                void updateRegistration(String(r.id), { status: "CONFIRMED" })
-                                  .then(load)
-                                  .catch((e) => setError(e.message))
-                              }
-                            >
-                              Confirm
-                            </button>
+                              label="Confirm payment"
+                              onConfirmed={() => void load()}
+                              onError={(m) => setError(m)}
+                            />
                           )}
                           {String(r.status).toUpperCase() === "CONFIRMED" && (
                             <button

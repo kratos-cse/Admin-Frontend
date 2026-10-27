@@ -40,3 +40,31 @@ export function cancelRegistration(registrationId: string) {
     auth: true,
   });
 }
+
+export type ConfirmOfflinePaymentResult = {
+  registration_id: string;
+  payment_id: string;
+  registration_status: string;
+  payment_status: string;
+  fulfillment: Record<string, boolean>;
+};
+
+/** Record manual/offline payment and confirm registration (not Razorpay capture recovery). */
+export function confirmOfflinePayment(
+  registrationId: string,
+  body: {
+    payment_method: string;
+    payment_reference: string;
+    amount_paise?: number;
+    currency?: string;
+  }
+) {
+  return apiFetchData<ConfirmOfflinePaymentResult>(
+    `/admin/registrations/${registrationId}/confirm-offline-payment`,
+    {
+      method: "POST",
+      body,
+      auth: true,
+    }
+  );
+}
