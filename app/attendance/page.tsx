@@ -93,16 +93,16 @@ export default function AttendancePage() {
           {hasPermission("checkpoint-management") && (
             <div className="toolbar" style={{ marginTop: 12 }}>
               <input
-                placeholder="Checkpoint name"
+                placeholder="Common checkpoint name, e.g. Main Entrance"
                 value={cpName}
                 onChange={(e) => setCpName(e.target.value)}
               />
               <button
                 type="button"
                 className="btn btn-primary"
-                disabled={!cpName || !eventId}
+                disabled={!cpName.trim()}
                 onClick={() =>
-                  void createCheckpoint({ event_id: eventId, name: cpName })
+                  void createCheckpoint({ name: cpName.trim() })
                     .then(() => {
                       setCpName("");
                       return load();
@@ -110,8 +110,11 @@ export default function AttendancePage() {
                     .catch((e) => setError(e.message))
                 }
               >
-                Create checkpoint
+                Create common checkpoint
               </button>
+              <p className="muted" style={{ width: "100%" }}>
+                A common checkpoint works for every event. The QR decides which event was scanned.
+              </p>
             </div>
           )}
         </div>
