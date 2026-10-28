@@ -2,15 +2,28 @@ import { apiFetchData } from "./client";
 
 export function listAttendance(params?: {
   event_id?: string;
-  skip?: number;
+  checkpoint_id?: string;
+  result?: string;
+  offset?: number;
   limit?: number;
 }) {
   const q = new URLSearchParams();
   if (params?.event_id) q.set("event_id", params.event_id);
-  if (params?.skip != null) q.set("skip", String(params.skip));
+  if (params?.checkpoint_id) q.set("checkpoint_id", params.checkpoint_id);
+  if (params?.result) q.set("result", params.result);
+  if (params?.offset != null) q.set("offset", String(params.offset));
   if (params?.limit != null) q.set("limit", String(params.limit));
   const qs = q.toString();
   return apiFetchData(`/admin/attendance${qs ? `?${qs}` : ""}`, { auth: true });
+}
+
+export function setAttendanceState(body: {
+  checkpoint_id: string;
+  checked_in: boolean;
+  profile_id?: string;
+  team_member_id?: string;
+}) {
+  return apiFetchData(`/admin/attendance/state`, { method: "POST", body, auth: true });
 }
 
 export function listCheckpoints(params?: { event_id?: string }) {
